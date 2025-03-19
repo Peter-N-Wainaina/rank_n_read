@@ -37,18 +37,15 @@ def get_books():
     #randomly select 10 books from our dataset
     sample_books = books_df.head(10)
 
-    # Filter the relevant columns: title, image, rating, previewLink, author, and year of publication
-    filtered_books = sample_books[['title', 'image', 'previewLink', 'authors', 'publishedDate']]
-
     #converting the DataFrame JSON format, selecting the all the columns
-    books_json = filtered_books.to_json(orient='records')
+    books_json = sample_books.to_json(orient='records')
     return books_json
 
 @app.route("/")
 def home():
     return render_template('base.html',title="sample html")
 
-@app.route("/episodes")
+@app.route("/getbooks")
 def books_search():
     books = get_books()
     return jsonify(json.loads(books))
