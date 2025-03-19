@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
@@ -13,34 +13,45 @@ os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Specify the path to the JSON file relative to the current script
-json_file_path = os.path.join(current_directory, 'init.json')
+json_file_path = os.path.join(current_directory, 'data_exploration', 'books.json')
 
 # Assuming your JSON data is stored in a file named 'init.json'
 with open(json_file_path, 'r') as file:
     data = json.load(file)
-    episodes_df = pd.DataFrame(data['episodes'])
-    reviews_df = pd.DataFrame(data['reviews'])
+
+
+# Extract all the book details into a list
+books_data = []
+for book_title in data:
+    book_details = data[book_title]
+    for book in book_details:
+        books_data.append(book)
+
+#Assuming the "books" key holds the books dat in the JSON 
+books_df = pd.DataFrame(books_data)
 
 app = Flask(__name__)
 CORS(app)
 
-# Sample search using json with pandas
-def json_search(query):
-    matches = []
-    merged_df = pd.merge(episodes_df, reviews_df, left_on='id', right_on='id', how='inner')
-    matches = merged_df[merged_df['title'].str.lower().str.contains(query.lower())]
-    matches_filtered = matches[['title', 'descr', 'imdb_rating']]
-    matches_filtered_json = matches_filtered.to_json(orient='records')
-    return matches_filtered_json
+def get_books():
+    #randomly select 10 books from our dataset
+    sample_books = books_df.head(10)
+
+    # Filter the relevant columns: title, image, rating, previewLink, author, and year of publication
+    filtered_books = sample_books[['title', 'image', 'previewLink', 'authors', 'publishedDate']]
+
+    #converting the DataFrame JSON format, selecting the all the columns
+    books_json = filtered_books.to_json(orient='records')
+    return books_json
 
 @app.route("/")
 def home():
     return render_template('base.html',title="sample html")
 
 @app.route("/episodes")
-def episodes_search():
-    text = request.args.get("title")
-    return json_search(text)
+def books_search():
+    books = get_books()
+    return jsonify(json.loads(books))
 
 if 'DB_NAME' not in os.environ:
-    app.run(debug=True,host="0.0.0.0",port=5000)
+    app.run(debug=True,host="0.0.0.0",port=5001)
