@@ -41,6 +41,7 @@ def get_books():
     books_json = sample_books.to_json(orient='records')
     return books_json
 
+
 @app.route("/")
 def home():
     return render_template('base.html',title="sample html")
