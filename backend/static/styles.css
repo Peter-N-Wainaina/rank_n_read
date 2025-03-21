@@ -74,6 +74,12 @@
     align-items: flex-start;
     gap: 15px;
 }
+
+.book-card:hover {
+    transform: scale(1.02);
+    box-shadow: 2px 2px 10px rgba(0, 51, 255, 0.6);
+}
+
 .book-info {
     flex: 1;
 }
@@ -82,6 +88,7 @@
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 5px;
+    color: rgba(0, 51, 255, 0.5);
 }
   
 .book-meta {
@@ -96,80 +103,3 @@
     max-width: 150px;
 }
 
-/* #google-c{
-    color:#4285F4;
-}
-
-#google-s{
-    color:#DB4437;
-}
-
-#google-4{
-    color:	#F4B400;
-}
-
-#google-3{
-    color:	#4285F4;
-}
-
-#google-0-1{
-    color:	#0F9D58;
-}
-
-#google-0-2{
-    color:#DB4437;
-}
-
-.google-colors{
-    display: flex;
-    align-items: center;
-    font-size: 48px;
-    font-family: 'Open Sans', sans-serif;
-}
-
-.google-colors h1{
-    margin-bottom: 0;
-    margin-right: 3px;
-}
-
-.input-box{
-    border-radius: 50px;
-    border:1px solid black;
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-    padding:12px;
-    width: 600px;
-}
-
-.input-box img{
-    height: 20px;
-    width:20px;
-}
-
-.top-text{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.input-box input{
-    width: 100%;
-    margin-left: 10px;
-    font-size: 16px;
-    border: none;
-    outline: 0;
-}
-
-#answer-box{
-    width: 700px;
-    margin-top:50px; 
-}
-
-.episode-title{
-    font-family: 'Kanit', sans-serif;
-}
-
-.episode-desc{
-    font-family: 'Montserrat', sans-serif;
-} */
