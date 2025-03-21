@@ -5,7 +5,7 @@ from collections import Counter
 from .dataset import Dataset
 from .utils import tokenize_text
 
-class Processing(object):
+class Processor(object):
     def __init__(self):
         self.dataset = Dataset()
         self.books = self.dataset.books
