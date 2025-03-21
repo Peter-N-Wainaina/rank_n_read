@@ -46,10 +46,16 @@ def get_books():
 def home():
     return render_template('base.html',title="sample html")
 
+#@app.route("/getbooks", methods=["POST"])
 @app.route("/getbooks")
 def books_search():
+    # data = request.get_json()
+    # titles = data.get("titles", [])
+    # authors = data.get("authors", [])
+    # categories = data.get("categories", [])
+    # call function that takes in titles, authors, categories as input and returns reccomended books
     books = get_books()
-    return jsonify(json.loads(books))
+    return jsonify(json.loads(books)) 
 
 
 @app.route("/get_from_title", method = ["GET"])

@@ -92,9 +92,33 @@
     
     <script>
         document.getElementById("rec-button").addEventListener("click", function() {
-            // alert("Feature coming soon! Personalized book recommendations will be available here.");
+            //Get Raw Inputs values
+            const titleRaw = document.getElementById("bookTitle").value;
+            const authorRaw = document.getElementById("author").value;
+            const categoryRaw = document.getElementById("category").value;
 
-            fetch('/getbooks')
+            //Process raw inputs to arrays
+            const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+            const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+            const categories = categoryRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+
+            console.log(titles);
+            console.log(authors);
+            console.log(categories);
+
+
+            fetch('/getbooks', {
+                //send data to backend
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    titles: titles,
+                    authors: authors,
+                    categories: categories
+                }),
+            })
                 .then(response => response.json())
                 .then(data => {
                 const container = document.getElementById('books-container');
@@ -113,6 +137,8 @@
                     image.alt = book.title;
                     card.appendChild(image);
                     }
+
+                    console.log(book.categories)
                     
                     // Create a container for text information.
                     const info = document.createElement('div');
