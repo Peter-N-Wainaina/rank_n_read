@@ -1,17 +1,21 @@
 import os
-from config import ROOT_PATH
+import json
+from collections import defaultdict
 
+from config import ROOT_PATH
+from backend.constants import CATEGORY_KEY, AUTHOR_KEY
+from backend.utils import tokenize_text, tokenize_name
 
 DEFAULT_BOOKS_JSON_FILE = os.path.join(ROOT_PATH, 'data_exploration', 'books.json')
 
 class Dataset(object):
     def __init__(self, json_file=DEFAULT_BOOKS_JSON_FILE):
         self.books = self._load_books(json_file)
+        self._book_title_to_id, self._book_id_to_title = self._build_book_index()
         self.authors_index = self._build_authors_index()
         self.categories_index = self._build_categories_index()
-        self._book_title_to_id, self._book_id_to_title = self._build_book_index(self.books)
 
-    def get_books_by_author(self, author: str):
+    def get_books_by_author(self, author_token: str) -> list[str]:
         """
         Retrieves a list of book titles written by an author. 
         Supports both exact matches (e.g., "J.K. Rowling") and partial matches (e.g., "Rowling").
@@ -23,9 +27,17 @@ class Dataset(object):
             list: A list of book titles associated with the given author.
                 If no books are found, an empty list is returned.
         """
-        raise NotImplementedError
+        if not author_token.strip():
+            return []
+        
+        author_tokens = tokenize_name(author_token)
+        book_ids = set()
+        for author_token in author_tokens:
+            author_book_ids = set(self.authors_index.get(author_token, []))
+            book_ids = book_ids.union(author_book_ids)
+        return self._get_book_titles_from_ids(list(book_ids))
 
-    def get_books_by_category(self, category: str):
+    def get_books_by_category(self, category: str) -> list[str]:
         """
         Retrieves a list of book titles belonging to a specific category.
         Supports both exact matches (e.g., "Science Fiction") and partial matches (e.g., "Fiction").
@@ -37,9 +49,20 @@ class Dataset(object):
             list: A list of book titles associated with the given category.
                 If no books are found, an empty list is returned.
         """
-        raise NotImplementedError
+        if not category.strip():
+            return []
+
+        categ_tokens = tokenize_text(category)
+        book_ids = set()
+        for categ_token in categ_tokens:
+            categ_book_ids = set(self.categories_index.get(categ_token, []))
+            book_ids = book_ids.union(categ_book_ids)
+        return self._get_book_titles_from_ids(list(book_ids))
     
-    def _load_books(self, json_file: str):
+    def _get_book_titles_from_ids(self, books_ids: list[int]) -> list[str]:
+        return [self._get_title_from_book_id(book_id) for book_id in books_ids]
+    
+    def _load_books(self, json_file: str) -> dict:
         """
         Reads a books from a JSON file and returns them as a dictionary.
 
@@ -58,7 +81,12 @@ class Dataset(object):
                 - `categories` (list of str): Categories or genres.
                 - `title` (str): Full title of the book.
         """
-        raise NotImplementedError
+        return self._load_json_file(json_file)
+
+    def _load_json_file(self, file_path):
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+        return data
 
     def _build_authors_index(self):
         """
@@ -70,26 +98,49 @@ class Dataset(object):
                 - Keys (str) represent author names.
                 - Values (list) contain references to book entries associated with each author.
         """
-        raise NotImplementedError
+        author_index = defaultdict(set)
+        for title, entries in self.books.items():
+            book_id = self._get_book_id_from_title(title)
+            for entry in entries:
+                raw_authors = entry.get(AUTHOR_KEY, [])
+
+                tokenized_authors = []
+                for author in raw_authors:
+                    tokenized_authors.extend(tokenize_name(author))
+                
+                for author in tokenized_authors:
+                    author_index[author].add(book_id)
+        
+        return {author: list(book_ids) for author, book_ids in author_index.items()}
 
     def _build_categories_index(self):
         """
-        Constructs an inverted index mapping book categories (genres) to books that belong to them
-        and returns it.
+        Constructs an inverted index mapping book categories (genres) to book IDs 
+        of books that belong to them.
 
         Returns:
             dict: An inverted index where:
                 - Keys (str) represent book categories.
                 - Values (list) contain references to book entries within each category.
         """
-        raise NotImplementedError
+        categ_index = defaultdict(set)
+        for title, entries in self.books.items():
+            book_id = self._get_book_id_from_title(title)
+            for entry in entries:
+                raw_categs = entry.get(CATEGORY_KEY, [])
+
+                tokenized_categs= []
+                for categ in raw_categs:
+                    tokenized_categs.extend(tokenize_text(categ))
+                
+                for categ in tokenized_categs:
+                    categ_index[categ].add(book_id)
+
+        return {categ: list(book_ids) for categ, book_ids in categ_index.items()}
     
-    def _build_book_index(self, books: dict) -> tuple:
+    def _build_book_index(self) -> tuple:
         """
         Builds mappings between book titles and unique indices.
-
-        Args:
-            books (dict): A dictionary containing book titles as keys.
 
         Returns:
             tuple: (dict, dict)
@@ -99,7 +150,11 @@ class Dataset(object):
         Raises:
             ValueError: If books are empty or None.
         """
-        raise NotImplementedError
+        titles_list = sorted(list(self.books.keys()))
+        book_title_to_id = {title:idx for idx, title in enumerate(titles_list)}
+        book_id_to_title = {idx:title for idx, title in enumerate(titles_list)}
+
+        return (book_title_to_id, book_id_to_title)
 
     def _get_book_id_from_title(self, book_title: str) -> int:
         """
@@ -114,7 +169,9 @@ class Dataset(object):
         Raises:
             KeyError: If the book title is not found.
         """
-        raise NotImplementedError
+        if book_title not in self._book_title_to_id:
+            raise KeyError(f"Book title '{book_title}' not in index")
+        return self._book_title_to_id[book_title]
 
     def _get_title_from_book_id(self, book_id: int) -> str:
         """
@@ -129,4 +186,7 @@ class Dataset(object):
         Raises:
             KeyError: If the book ID is not found.
         """
-        raise NotImplementedError
+        if book_id not in self._book_id_to_title:
+                raise KeyError(f"Book ID '{book_id}' not found in index.")
+
+        return self._book_id_to_title[book_id]
