@@ -7,16 +7,7 @@ import pandas as pd
 from collections import defaultdict
 from processing import Processing
 
-# ROOT_PATH for linking with all your files. 
-os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
-
-# Get the directory of the current script
-current_directory = os.path.dirname(os.path.abspath(__file__))
-
-# Specify the path to the JSON file relative to the current script
-json_file_path = os.path.join(current_directory, 'data_exploration', 'books.json')
-
-processing = Processing(json_file_path)
+processing = Processing()
 
 app = Flask(__name__)
 CORS(app)

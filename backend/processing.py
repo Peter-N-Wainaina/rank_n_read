@@ -2,27 +2,12 @@ import re
 import json
 import pandas as pd
 from collections import defaultdict
+from dataset import Dataset
 
-class Processing:
-    def __init__(self, json_file_path):
-        self.data = self.load_data(json_file_path)
-        self.books_df = self.create_dataframe()
-
-    def load_data(self, file_path):
-        with open(file_path, 'r') as file:
-            return json.load(file)
-        
-    def create_dataframe(self):
-        books_data = []
-        for book_title in self.data:
-            book_details = self.data[book_title]
-            for book in book_details:
-                books_data.append(book)
-        return pd.DataFrame(books_data)
-
-    def get_books(self, num_books=10):
-        sample_books = self.books_df.head(num_books)
-        return sample_books.to_json(orient='records')
+class Processing(object):
+    def __init__(self):
+        self.dataset = Dataset()
+        self.books = self.dataset.books
 
     def tokenize(self, text):
         """Returns a list of words that make up the text.    
