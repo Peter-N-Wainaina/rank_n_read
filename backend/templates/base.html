@@ -66,16 +66,16 @@
         <div class="container" id="input_form">
             <div class="container-sm" id="form">
                 <div class="mb-3">
-                    <label for="formGroupBookTitle" class="form-label">Book Title</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput" placeholder="Example input placeholder">
+                    <label for="bookTitle" class="form-label">Book Title</label>
+                    <input type="text" class="form-control" id="bookTitle" placeholder="Enter a book title">
                   </div>
                   <div class="mb-3">
-                    <label for="formGroupExampleInput2" class="form-label">Author</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder">
+                    <label for="author" class="form-label">Author</label>
+                    <input type="text" class="form-control" id="author" placeholder="Enter an author">
                   </div>
                   <div class="mb-3">
-                    <label for="formGroupExampleInput2" class="form-label">Category</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder">
+                    <label for="category" class="form-label">Category</label>
+                    <input type="text" class="form-control" id="category" placeholder="Enter comma-separated categories">
                   </div>
                   <div class="d-grid gap-2 col-6 mx-auto" id="rec-button">
                     <button class="btn btn-primary" type="button">Find Recommendations</button>
@@ -92,9 +92,33 @@
     
     <script>
         document.getElementById("rec-button").addEventListener("click", function() {
-            // alert("Feature coming soon! Personalized book recommendations will be available here.");
+            //Get Raw Inputs values
+            const titleRaw = document.getElementById("bookTitle").value;
+            const authorRaw = document.getElementById("author").value;
+            const categoryRaw = document.getElementById("category").value;
 
-            fetch('/getbooks')
+            //Process raw inputs to arrays
+            const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+            const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+            const categories = categoryRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+
+            console.log(titles);
+            console.log(authors);
+            console.log(categories);
+
+
+            fetch('/getbooks', {
+                //send data to backend
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    titles: titles,
+                    authors: authors,
+                    categories: categories
+                }),
+            })
                 .then(response => response.json())
                 .then(data => {
                 const container = document.getElementById('books-container');
@@ -113,6 +137,8 @@
                     image.alt = book.title;
                     card.appendChild(image);
                     }
+
+                    console.log(book.categories)
                     
                     // Create a container for text information.
                     const info = document.createElement('div');
@@ -157,6 +183,5 @@
                 .catch(error => console.error('Error fetching books:', error));
             });
     </script>
-    <script src="script.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>

@@ -25,6 +25,7 @@
     width: 60VW;
 }
 
+
 #input_form:hover{
     transform: rotate(1deg); 
     transform: scale(1.02);
