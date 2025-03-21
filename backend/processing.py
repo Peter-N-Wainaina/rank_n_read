@@ -6,7 +6,7 @@ from .dataset import Dataset
 from .utils import tokenize_text
 
 class Processor(object):
-    def __init__(self):
+    def __init__(self, json_file=None):
         self.dataset = Dataset()
         self.books = self.dataset.books
     
@@ -78,6 +78,7 @@ class Processor(object):
     def get_recs_from_author(self, author: str):
         """
         Returns a list of recommended books based on the author
+        Supports both exact matches (e.g., "J.K. Rowling") and partial matches (e.g., "Rowling").
 
         Parameters:
             author: str
