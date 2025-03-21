@@ -82,11 +82,81 @@
                   </div>
             </div>
         </div>
+
+        <div id="books-container"></div>
+
         <div class="footer">
             Elizabeth Vera Atieno | Brandon Boit | Mnumzana Moyo | Peter Wainaina | Benjamin Mukeku
         </div>
     </div>
     
+    <script>
+        document.getElementById("rec-button").addEventListener("click", function() {
+            // alert("Feature coming soon! Personalized book recommendations will be available here.");
+
+            fetch('/getbooks')
+                .then(response => response.json())
+                .then(data => {
+                const container = document.getElementById('books-container');
+                // Clear any existing content
+                container.innerHTML = '';
+                data.forEach(book => {
+                    // Create the book card container
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    
+                    // If an image exists, create an <img> element.
+                    if (book.image) {
+                    const image = document.createElement('img');
+                    image.className = 'book-image';
+                    image.src = book.image;
+                    image.alt = book.title;
+                    card.appendChild(image);
+                    }
+                    
+                    // Create a container for text information.
+                    const info = document.createElement('div');
+                    info.className = 'book-info';
+                    
+                    // Title
+                    const title = document.createElement('div');
+                    title.className = 'book-title';
+                    title.textContent = book.title;
+                    info.appendChild(title);
+                    
+                    // Categories (join if it's an array)
+                    const categories = document.createElement('p');
+                    categories.className = 'book-meta';
+                    categories.textContent = 'Categories: ' + (Array.isArray(book.categories) ? book.categories.join(', ') : book.categories);
+                    info.appendChild(categories);
+                    
+                    // Authors (join if it's an array)
+                    const authors = document.createElement('p');
+                    authors.className = 'book-meta';
+                    authors.textContent = 'Author(s): ' + (Array.isArray(book.authors) ? book.authors.join(', ') : book.authors);
+                    info.appendChild(authors);
+                    
+                    // Published Date
+                    const publishedDate = document.createElement('p');
+                    publishedDate.className = 'book-meta';
+                    publishedDate.textContent = 'Published Date: ' + book.publishedDate;
+                    info.appendChild(publishedDate);
+                    
+                    // Description
+                    const description = document.createElement('p');
+                    description.className = 'book-description';
+                    description.textContent = book.description;
+                    info.appendChild(description);
+                    
+                    // Append the info container to the card.
+                    card.appendChild(info);
+                    // Append the card to the main container.
+                    container.appendChild(card);
+                });
+                })
+                .catch(error => console.error('Error fetching books:', error));
+            });
+    </script>
     <script src="script.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
