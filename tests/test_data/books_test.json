@@ -1,0 +1,51 @@
+{
+    "Sample Book One": [
+      {
+        "description": "Test description for Book One.",
+        "authors": ["J.K Rawling"],
+        "image": "http://example.com/image1.jpg",
+        "previewLink": "http://example.com/preview1",
+        "publisher": "Test Publisher",
+        "publishedDate": "2020-01-01",
+        "categories": ["Fiction", "Adventure"],
+        "title": "Sample Book One"
+      }
+    ],
+    "Sample Book Two": [
+      {
+        "description": "Test description for Book Two.",
+        "authors": ["Bob O'Connor"],
+        "image": "http://example.com/image2.jpg",
+        "previewLink": "http://example.com/preview2",
+        "publisher": "Another Publisher",
+        "publishedDate": "2021-05-10",
+        "categories": ["Nonfiction", "Technology & Engineering"],
+        "title": "Sample Book Two"
+      }
+    ],
+    "Edge Case Book": [
+      {
+        "description": "This book has no categories listed.",
+        "authors": ["Charlie Coauthor"],
+        "image": "http://example.com/image3.jpg",
+        "previewLink": "http://example.com/preview3",
+        "publisher": "Unknown Publisher",
+        "publishedDate": "2019-08-22",
+        "categories": [],
+        "title": "Edge Case Book"
+      }
+    ],
+    "Multi-Author Book": [
+      {
+        "description": "A book written by multiple contributors.",
+        "authors": ["Dana Coauthor", "Eli Coauthor"],
+        "image": "http://example.com/image4.jpg",
+        "previewLink": "http://example.com/preview4",
+        "publisher": "Team Publisher",
+        "publishedDate": "2022-03-15",
+        "categories": ["Science Fiction", "Technology"],
+        "title": "Multi-Author Book"
+      }
+    ]
+  }
+  
