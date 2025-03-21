@@ -55,6 +55,46 @@
     padding-top: 15px;
 }
 
+#books-container {
+    margin-top: 40px;
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.book-card {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 15px;
+    box-shadow: 1px 1px 10px rgba(0, 51, 255, 0.5);
+    background-color: #fff;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+.book-info {
+    flex: 1;
+}
+
+.book-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+  
+.book-meta {
+    margin: 5px 0;
+}
+
+.book-description {
+    margin-top: 10px;
+}
+
+.book-image {
+    max-width: 150px;
+}
+
 /* #google-c{
     color:#4285F4;
 }
