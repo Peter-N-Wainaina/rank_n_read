@@ -5,26 +5,12 @@ import numpy as np
 from collections import Counter
 from collections import defaultdict
 from dataset import Dataset
+import utils
 
 class Processing(object):
     def __init__(self):
         self.dataset = Dataset()
         self.books = self.dataset.books
-
-    def tokenize(self, text):
-        """Returns a list of words that make up the text.    
-
-        Parameters
-        ----------
-        text : str
-            The input text string
-
-        Returns
-        -------
-        list
-            A list of tokens corresponding to the input string.
-        """
-        return [x for x in re.findall(r"[a-z]+", text.lower())]
     
     def compute_jaccard_similarity(self, query_categories, book_categories):
         """
@@ -66,7 +52,7 @@ class Processing(object):
         # specific number of books?
 
         # get a list of categories from the query
-        categories_ls = self.tokenize(query)
+        categories_ls = utils.tokenize_text(query)
 
         # put the titles you get from Dataset.get_books_by_category in a set to take care of dups
         titles_by_category_set = set()
@@ -83,6 +69,7 @@ class Processing(object):
             book_info = self.books[title]
             book_categories_set = set(book_info["categories"])
             sim_score = self.compute_jaccard_similarity(query_categories_set, book_categories_set)
+            book_info["score"] = sim_score
             score_books_dict[sim_score] = book_info
 
         # sort the books in non-increasing order based on the similarity score
@@ -118,6 +105,7 @@ class Processing(object):
             book_authors_set = set()
             book_authors_set.update(book_info["authors"])
             sim_score = self.compute_jaccard_similarity(author_set, book_authors_set)
+            book_info["score"] = sim_score
             score_books_dict[sim_score] = book_info
         
         # sort the books in non-increasing order based on the similarity score
