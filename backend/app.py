@@ -4,6 +4,8 @@ from flask import Flask, render_template, request,jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
+from processing import processing
+from dataset import Dataset
 
 # ROOT_PATH for linking with all your files. 
 # Feel free to use a config.py or settings.py with a global export variable
@@ -58,31 +60,43 @@ def books_search():
     return jsonify(json.loads(books)) 
 
 
-@app.route("/get_from_title", method = ["GET"])
-def get_recs_from_title():
+@app.route('/getbooks', methods=['POST'])
+def get_rec_books():
     """
-    Returns list of books from a ttle input
+    Returns book recommendations from user inputs
     """
-    title = request.args.get("query")
-    pass
+    data = request.get_jason()
 
-@app.route("/get_from_categories", methods=["GET"])
-def get_recs_from_categories():
-    """
-    Returns book recommendations from a list of genre queries.
-    """
-    query = request.args.get("query")
-    recommendations = processing.get_recs_from_categories(query)
-    return recommendations
+    author = data.get('author', None)
+    category = data.get('category', None)
+    title = data.get('title', None)
 
-@app.route("/get_from_authors", methods=["GET"])
-def get_recs_from_authors():
-    """
-    Returns book recommendations from an author input.
-    """
-    author = request.args.get("query")
-    recommendations = processing.get_recs_from_author(author)
-    return recommendations
+    #ensuring we have atleast one of the three fields
+    if not (author or category or title):
+        return jsonify({"error": "At least one of 'author', 'category', or 'title' must be provided"}), 400
+    
+    recommended_books = []
+    #get recommendations for the title
+    if title:
+        books_by_title = processing.get_recs_from_title(title, Dataset.books)
+        recommended_books.extend(books_by_title)
+
+    #get recommendations by author
+    if author:
+        books_by_author = processing. get_recs_from_author(author)
+        recommended_books.extend(books_by_author)
+
+    #get recomendations by categories
+    if category:
+        books_by_category = processing.get_recs_from_categories(category)
+        recommended_books.extend(books_by_category)
+
+    #removing duplicates by converting to set
+    unique_books = {book['title']: book for bok in recommended_books}.values()
+
+    result_books = list(unique_books)[:50]
+
+    return jsonify(result_books)
 
 
 if 'DB_NAME' not in os.environ:
