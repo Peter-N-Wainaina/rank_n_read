@@ -22,6 +22,14 @@ def books_search():
     books = processing.get_books()
     return jsonify(json.loads(books))
 
+@app.route("/get_from_title", method = ["GET"])
+def get_recs_from_title():
+    """
+    Returns list of books from a ttle input
+    """
+    title = request.args.get("query")
+    pass
+
 @app.route("/get_from_categories", methods=["GET"])
 def get_recs_from_categories():
     """
