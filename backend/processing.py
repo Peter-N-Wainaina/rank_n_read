@@ -69,6 +69,7 @@ class Processing(object):
             book_info = self.books[title]
             book_categories_set = set(book_info["categories"])
             sim_score = self.compute_jaccard_similarity(query_categories_set, book_categories_set)
+            book_info["score"] = sim_score
             score_books_dict[sim_score] = book_info
 
         # sort the books in non-increasing order based on the similarity score
@@ -104,6 +105,7 @@ class Processing(object):
             book_authors_set = set()
             book_authors_set.update(book_info["authors"])
             sim_score = self.compute_jaccard_similarity(author_set, book_authors_set)
+            book_info["score"] = sim_score
             score_books_dict[sim_score] = book_info
         
         # sort the books in non-increasing order based on the similarity score
