@@ -2,10 +2,10 @@ import pytest
 import os 
 
 from backend.dataset import Dataset
-from config import ROOT_PATH
+from backend.config import ROOT_PATH
 
 
-BOOKS_TEST_JSON = os.path.join(ROOT_PATH, 'tests', 'test_data','books_test.json')
+BOOKS_TEST_JSON = os.path.join(ROOT_PATH,'tests', 'test_data','books_test.json')
 
 @pytest.fixture
 def dataset() -> Dataset:

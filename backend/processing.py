@@ -1,11 +1,9 @@
 import re
-import json
-import pandas as pd
 import numpy as np
 from collections import Counter
-from collections import defaultdict
-from dataset import Dataset
-import utils
+
+from .dataset import Dataset
+from .utils import tokenize_text
 
 class Processing(object):
     def __init__(self):
@@ -52,7 +50,7 @@ class Processing(object):
         # specific number of books?
 
         # get a list of categories from the query
-        categories_ls = utils.tokenize_text(query)
+        categories_ls = tokenize_text(query)
 
         # put the titles you get from Dataset.get_books_by_category in a set to take care of dups
         titles_by_category_set = set()
@@ -173,8 +171,6 @@ class Processing(object):
 
         return most_similarity_title
 
-
-
     def get_recs_from_title(self, title, dataset, max_result = 50):
         """
         parameters
@@ -220,5 +216,15 @@ class Processing(object):
         
         #return a max of max_results
         return ranked_books[:max_result]
-
-       
+    
+    def get_recommended_books(self, user_input: dict[str: list[str]]) -> list[dict]:
+        """    
+            Returns a list of recommended books based on user input.
+        """
+        #TODO: Add recommendation functionality
+        place_holder_books = []
+        for _, entries in self.books.items():
+            place_holder_books.extend(entries)
+            if len(place_holder_books) >= 5:
+                break
+        return place_holder_books

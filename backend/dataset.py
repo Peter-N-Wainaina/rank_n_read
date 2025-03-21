@@ -2,11 +2,11 @@ import os
 import json
 from collections import defaultdict
 
-from config import ROOT_PATH
-from backend.constants import CATEGORY_KEY, AUTHOR_KEY
-from backend.utils import tokenize_text, tokenize_name
+from .config import ROOT_PATH
+from .constants import CATEGORY_KEY, AUTHOR_KEY
+from .utils import tokenize_text, tokenize_name
 
-DEFAULT_BOOKS_JSON_FILE = os.path.join(ROOT_PATH, 'data_exploration', 'books.json')
+DEFAULT_BOOKS_JSON_FILE = os.path.join(ROOT_PATH,'data_exploration', 'books.json')
 
 class Dataset(object):
     def __init__(self, json_file=DEFAULT_BOOKS_JSON_FILE):
