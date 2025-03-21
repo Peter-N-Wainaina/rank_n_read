@@ -66,24 +66,5 @@ def get_recs_from_title():
     title = request.args.get("query")
     pass
 
-@app.route("/get_from_categories", methods=["GET"])
-def get_recs_from_categories():
-    """
-    Returns book recommendations from a list of genre queries.
-    """
-    query = request.args.get("query")
-    recommendations = processing.get_recs_from_categories(query)
-    return recommendations
-
-@app.route("/get_from_authors", methods=["GET"])
-def get_recs_from_authors():
-    """
-    Returns book recommendations from an author input.
-    """
-    author = request.args.get("query")
-    recommendations = processing.get_recs_from_author(author)
-    return recommendations
-
-
 if 'DB_NAME' not in os.environ:
     app.run(debug=True,host="0.0.0.0",port=5001)
