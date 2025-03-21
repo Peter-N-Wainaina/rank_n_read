@@ -208,7 +208,7 @@ class Processing(object):
         #get books written by the same author
         books_by_author = []
         for author in authors:
-            books_by_author.extend(dataset.get_books_by_author(author))
+            books_by_author.extend(self.get_recs_from_author(author))
 
         books_by_categories = self.get_recs_from_categories(dataset, ','.join(categories))
 
