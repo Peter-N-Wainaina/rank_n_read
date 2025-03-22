@@ -50,7 +50,6 @@ def test_get_recs_from_categories(processor):
 def test_get_recs_from_author(processor):
     # partial match
     recs1 = processor.get_recs_from_author(["Rawling"])
-    print(recs1)
     max_title = max(recs1, key=recs1.get)
     assert max_title == "Just science fiction", f"Exepected 'Just science fiction' but got {max_title}"
 
