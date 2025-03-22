@@ -1,12 +1,12 @@
 import os
 import pytest
 from backend.processing import Processor
-from test_constants import BOOKS_TEST_JSON
+from test_constants import PROCESSOR_TEST_JSON
 
 @pytest.fixture
 def processor() -> Processor:
     """Fixture to create a Processor instance"""
-    return Processor(BOOKS_TEST_JSON)
+    return Processor(PROCESSOR_TEST_JSON)
 
 def test_compute_jaccard_similarity(processor):
     set1 = {"fear"}
@@ -26,23 +26,33 @@ def test_compute_jaccard_similarity(processor):
 
 
 def test_get_recs_from_categories(processor):
+    # one category
     recs1 = processor.get_recs_from_categories(["Nonfiction"])
     max_title = max(recs1, key=recs1.get)
     max_value = recs1[max_title]
-    # assert max_value== 1/3, f"Expected 1/3 but got {max_value}"
+    assert max_value == 1/3, f"Expected 1/3 but got {max_value}"
     assert max_title == "Sample Book Two", f"Expected Sample Book Two but got {max_title}"
 
+    # multiple categories
     recs2 = processor.get_recs_from_categories(["Science Fiction", "Technology"])
     max_title = max(recs2, key=recs2.get)
     max_value = recs2[max_title]
     assert max_value == 1, f"Expected 1 but got {max_value}"
     assert max_title == "Multi-Author Book", f"Expected 'Multi-Author Book' but got {max_title}"
 
+    # same catefories but some are compound
+    recs3 = processor.get_recs_from_categories(["Science Fiction & Technology"])
+    max_title = max(recs3, key=recs3.get)
+    max_value = recs3[max_title]
+    assert max_value == 1, f"Expected 1 but got {max_value}"
+    assert max_title == "Multi-Author Book", f"Expected 'Multi-Author Book' but got {max_title}"
+
 def test_get_recs_from_author(processor):
     # partial match
     recs1 = processor.get_recs_from_author(["Rawling"])
+    print(recs1)
     max_title = max(recs1, key=recs1.get)
-    assert max_title == "Sample Book One", f"Exepected 'Sample Book One' but got {max_title}"
+    assert max_title == "Just science fiction", f"Exepected 'Just science fiction' but got {max_title}"
 
     # full match
     recs2 = processor.get_recs_from_author(["Charlie Coauthor"])
