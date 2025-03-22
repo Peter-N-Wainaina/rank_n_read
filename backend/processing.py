@@ -97,111 +97,45 @@ class Processor(object):
         
         return score_books_dict
 
-    def process_title(self,title):
+    def get_recs_from_title(title: str, top_n=20) -> dict:
         """
-        Tokenizes title into lowercase words and removes non-alphabet characters
-        """
-        title = title.lowe()
-        title = re.sub(r'[^a-z\s]', '', title)
-        return title.split()
-    
-    def title_to_vector(self, title, vocabulary):
-        """
-        convert a book's title into a vector based on the vocabulary
-        """
-        words = self.process_title(title)
-        word_count = Counter(words)
-        vector = [word_count.get(word, 0) for word in vocabulary]
-        return vector
-    
-    def cosine_similarity(self, vec1, vec2):
-        """
-        compute cosine similarity between two vectors
-        """
-        dot_product = np.dot(vec1, vec2)
-        magnitude1 = np.linalg.norm(vec1)
-        magnitude2 = np.linalg.norm(vec2)
+        Computes the similarity score for books based on a given title.
 
-        if magnitude1 == 0 or magnitude2 == 0:
-            return 0
-        
-        return dot_product/ (magnitude1 * magnitude2)
-    
-    def find_similar_books(self, user_title, dataset):
-        """
-        Find the book with the highest similarity to the given user input using cosine similarity.
-        
+        This function tokenizes the user input title, retrieves the books that 
+        contain the tokens, counts how many times each book appears, and then 
+        calculates and normalizes the similarity score. It then returns the top 
+        N books with the highest similarity scores.
+
         Args:
-            user_title (str): The title of the book input by the user.
-            dataset (Dataset): The dataset object containing book data.
+            title (str): The title of the book entered by the user. This is the 
+                        input title that will be tokenized and compared against 
+                        other books in the dataset.
+            top_n (int, optional): The number of top books to return based on their 
+                                similarity scores. Default is 20.
 
         Returns:
-            str: The title of the book with the highest similarity to the user input.
+            dict: A dictionary containing the book titles as keys and their 
+                normalized similarity scores as values. The dictionary is 
+                limited to the top N books with the highest similarity scores.
         """
-        vocabulary = set()
-        for book in dataset.books.values():
-            words = self.process_title(book['title'])
-            vocabulary.update(words)
 
-        vocabulary = sorted(vocabulary)
-
-        #convert all book titles and user input to vectors
-        user_vector = self.title_to_vector(user_title, vocabulary)
-        books_vectors = {title: self.title_to_vector(title, vocabulary) for title in dataset.books.keys()}
+        tokens = tokenize_text(title)
         
-        #compute cose similarity between user_title and all books
-        similarities = {title: self.cosine_similarity(user_vector, book_vector) for title, book_vector in books_vectors.items()}
-
-        #find the book with the highest similarity
-        most_similarity_title = max(similarities, key = similarities.get)
-
-        return most_similarity_title
-
-    def get_recs_from_title(self, title, dataset, max_result = 50):
-        """
-        parameters
-        ----------
-        title: str
-            The input title string. A string of a title of a book
-        Returns
-        -------
-        list
-            Alist of books recommendations
-
-                Note: data -> {title: [{
-                                "description": str,
-                                "authors": ls,
-                                "image": str,
-                                "previewLink": str,
-                                "publisher": str,
-                                "publishedDate": str,
-                                "categories": ls,
-                                "title": str,
-                                "similarity": int
-                                }]}
-        """
-        most_similar_book_title = self.find_similar_books(title, dataset)
-        most_similar_book = dataset.books[most_similar_book_title]
-
-        #get the authors and the categories of the book
-        authors = most_similar_book["authors"]
-        categories = most_similar_book["categories"]
-
-        #get books written by the same author
-        books_by_author = []
-        for author in authors:
-            books_by_author.extend(self.get_recs_from_author(author))
-
-        books_by_categories = self.get_recs_from_categories(dataset, ','.join(categories))
-
-        #combine the results
-        recomended_books = books_by_author + books_by_categories
-
-        #rank the books by similarity score
-        ranked_books = sorted(recomended_books, key = lambda x:x.get('similarity', 0), reverse=True)
+        combined_list = []
+        for token in tokens:
+            books = Dataset.get_books_by_title_token(token)
+            combined_list.extend(books) 
         
-        #return a max of max_results
-        return ranked_books[:max_result]
+        book_counts = Counter(combined_list) 
+        
+        total_books = len(combined_list)
+        normalized_scores = {book: count / total_books for book, count in book_counts.items()}
+        
+        sorted_books = sorted(normalized_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        top_books = dict(sorted_books[:top_n])
+        
+        return top_books
     
     def get_recommended_books(self, user_input: dict[str: list[str]]) -> list[dict]:
         """    
