@@ -208,9 +208,42 @@ class Processor(object):
             Returns a list of recommended books based on user input.
         """
         #TODO: Add recommendation functionality
-        place_holder_books = []
-        for _, entries in self.books.items():
-            place_holder_books.extend(entries)
-            if len(place_holder_books) >= 5:
-                break
-        return place_holder_books
+        titles = user_input['titles']
+        authors = user_input['authors']
+        categories = user_input['categories']
+
+        fields = (titles, authors, categories)
+        funcs = (self.get_recs_from_title, self.get_recs_from_author, self.get_recs_from_categories)
+        results = []
+
+        for field, func in zip(fields, funcs):
+            if field:
+                results.append(func(field))
+            else:
+                results.append({})
+
+        title_recs, author_recs, categ_recs = results
+
+        merged = self._merge_recs(title_recs, author_recs, categ_recs, 0.3, 0.3, 0.4)
+        sorted_recs = sorted(merged, key=lambda x: x[1])
+
+        return_dict = {}
+
+        for rec, score in sorted_recs:
+            rec_json = self.books[rec]
+            rec_json['score'] = score
+            return_dict[rec] = rec_json
+
+        return return_dict
+
+
+    def _merge_recs(self, title_recs, author_recs, categ_recs, x, y, z):
+        merged = []
+        all_keys = set(title_recs) | set(author_recs) | set(categ_recs)
+        
+        for key in all_keys:
+            t_score = title_recs.get(key, 0)
+            a_score = author_recs.get(key, 0)
+            c_score = categ_recs.get(key, 0)
+            merged = (key, x * t_score + y * a_score + z * c_score)
+        return merged
