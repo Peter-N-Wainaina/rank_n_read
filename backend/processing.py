@@ -1,13 +1,17 @@
 import re
 import numpy as np
 from collections import Counter
+from math import isnan
 
 from .dataset import Dataset
 from .utils import tokenize_text
 
 class Processor(object):
     def __init__(self, json_file=None):
-        self.dataset = Dataset(json_file)
+        dataset = Dataset()
+        if json_file is not None:
+            dataset = Dataset(json_file)
+        self.dataset = dataset
         self.books = self.dataset.books
     
     def compute_jaccard_similarity(self, query_categories, book_categories):
@@ -97,7 +101,7 @@ class Processor(object):
         
         return score_books_dict
 
-    def get_recs_from_title(title: str, top_n=20) -> dict:
+    def get_recs_from_title(self, title: str, top_n=20) -> dict:
         """
         Computes the similarity score for books based on a given title.
 
@@ -123,7 +127,7 @@ class Processor(object):
         
         combined_list = []
         for token in tokens:
-            books = Dataset.get_books_by_title_token(token)
+            books = self.dataset.get_books_by_title_token(token)
             combined_list.extend(books) 
         
         book_counts = Counter(combined_list) 
@@ -146,7 +150,11 @@ class Processor(object):
         authors = user_input['authors']
         categories = user_input['categories']
 
-        fields = (titles, authors, categories)
+        title = ""
+        if titles:
+            title = titles[0]
+
+        fields = (title, authors, categories)
         funcs = (self.get_recs_from_title, self.get_recs_from_author, self.get_recs_from_categories)
         results = []
 
@@ -158,15 +166,23 @@ class Processor(object):
 
         title_recs, author_recs, categ_recs = results
 
-        merged = self._merge_recs(title_recs, author_recs, categ_recs, 0.3, 0.3, 0.4)
+        merged = self._merge_recs(title_recs, author_recs, categ_recs, 0.6, 0.3, 0.1)
         sorted_recs = sorted(merged, key=lambda x: x[1])
 
-        return_dict = {}
-
+        return_dict = []
         for rec, score in sorted_recs:
-            rec_json = self.books[rec]
-            rec_json['score'] = score
-            return_dict[rec] = rec_json
+            rec_json = self.books[rec][0]
+            rec_json["score"] = score
+
+            new_json = {}
+            for key, value in rec_json.items():
+                if not (isinstance(value, str) or isinstance(value, list)):
+                    new_json[key]  = ""
+                else:
+                    new_json[key] = value
+            return_dict.append(new_json)
+
+            
 
         return return_dict
 
@@ -179,5 +195,5 @@ class Processor(object):
             t_score = title_recs.get(key, 0)
             a_score = author_recs.get(key, 0)
             c_score = categ_recs.get(key, 0)
-            merged = (key, x * t_score + y * a_score + z * c_score)
+            merged.append((key, x * t_score + y * a_score + z * c_score))
         return merged

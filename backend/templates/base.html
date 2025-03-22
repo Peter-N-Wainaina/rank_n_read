@@ -127,13 +127,13 @@
                     // Published Date
                     const publishedDate = document.createElement('p');
                     publishedDate.className = 'book-meta';
-                    publishedDate.textContent = 'Published Date: ' + (book.publishedDate ?? 'Unknown');
+                    publishedDate.textContent = 'Published Date: ' + (book.publishDate ?? 'Unknown');
                     info.appendChild(publishedDate);
                     
                     // Description
                     const description = document.createElement('p');
                     description.className = 'book-description';
-                    description.textContent = book.description ?? 'Description Unavailable';
+                    description.textContent = book.description.toString() ?? 'Description Unavailable';
                     info.appendChild(description);
                     
                     // Append the info container to the card.
