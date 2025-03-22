@@ -4,7 +4,7 @@ from collections import Counter
 from math import isnan
 
 from .dataset import Dataset
-from .utils import tokenize_text
+from .utils import tokenize_text, tokenize_name
 
 class Processor(object):
     def __init__(self, json_file=None):
@@ -33,7 +33,7 @@ class Processor(object):
         union = query_categories | book_categories
         return len(intersection_set) / len(union) if len(union) != 0 else 0
     
-    def get_recs_from_categories(self, query: str):
+    def get_recs_from_categories(self, query: list):
         """
         Returns a list of book recommendations based on the query
 
@@ -44,24 +44,30 @@ class Processor(object):
             dict:
                 A dictionary of book titles and their scores based on categrories
         """
+        modified_query = []
+        for compound_query in query:
+            ls = tokenize_text(compound_query)
+            modified_query.extend(ls)
         # put the titles you get from Dataset.get_books_by_category in a set to take care of dups
         titles_by_category_set = set()
-        for category in query:
+        for category in modified_query:
             books_by_cat = self.dataset.get_books_by_category(category)
             if books_by_cat:
                 titles_by_category_set.update(books_by_cat)
-        
+
         # get the categories for each retrived subset and compute jaccard similarity
         # you should have a dict in the form {score: book infor dict...} after this block
         score_title_dict = {}
-        query_categories_set = set(query)
+        query_categories_set = set(modified_query)
         for title in titles_by_category_set:
             book_info = self.books[title][0]
-            book_categories_set = set(book_info["categories"])
+            book_categories_ls = []
+            for comp_category in book_info["categories"]:
+                ls = tokenize_text(comp_category)
+                book_categories_ls.extend(ls)
+            book_categories_set = set(book_categories_ls)
             sim_score = self.compute_jaccard_similarity(query_categories_set, book_categories_set)
             score_title_dict[title] = sim_score
-
-        # sort the books in non-increasing order based on the similarity score
 
         return score_title_dict
 
@@ -79,23 +85,30 @@ class Processor(object):
             dict:
                 A dictionary of book titles and their scores based on their authors
         """
-
+        modified_authors = []
+        for author in authors:
+            ls = tokenize_name(author)
+            modified_authors.extend(ls)
         # put the titles you get from Dataset.get_books_by_author in a set to take care of dups
         titles_by_authors_set = set()
-        for author in authors:
+        for author in modified_authors:
             books_titles_by_author = self.dataset.get_books_by_author(author)
             if books_titles_by_author:
                 titles_by_authors_set.update(books_titles_by_author)
         
         # make a set with the authors in it to pass into sim measure func
-        authors_set = set(authors)
+        authors_set = set(modified_authors)
 
         # get the authors for each retrived subset and compute jaccard similarity btwn authors
         # you should have a dict in the form {score: book infor dict...} after this block
         score_books_dict = {}
         for title in titles_by_authors_set:
             book_info = self.books[title][0]
-            book_authors_set = set(book_info["authors"])
+            modified_authors_from_book = []
+            for author in book_info["authors"]:
+                ls = tokenize_name(author)
+                modified_authors_from_book.extend(ls)
+            book_authors_set = set(modified_authors_from_book)
             sim_score = self.compute_jaccard_similarity(authors_set, book_authors_set)
             score_books_dict[title] = sim_score
         
