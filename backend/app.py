@@ -4,13 +4,13 @@ import pandas as pd
 from flask import Flask, render_template, request,jsonify
 from flask_cors import CORS
 
-from .processing import Processing
+from .processing import Processor
 from .dataset import Dataset
 
 app = Flask(__name__)
 CORS(app)
 
-processor = Processing()
+processor = Processor()
 
 @app.route("/")
 def home():
