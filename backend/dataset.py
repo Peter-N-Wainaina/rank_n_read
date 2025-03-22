@@ -12,6 +12,14 @@ class Dataset(object):
         self._book_title_to_id, self._book_id_to_title = self._build_book_index()
         self.authors_index = self._build_authors_index()
         self.categories_index = self._build_categories_index()
+        self.titles_index = self._build_titles_index()
+    
+    @property
+    def num_books(self) -> int:
+        """
+        Returns the number of books as a read-only property.
+        """
+        return len(self.books)
 
     def get_books_by_author(self, author_token: str) -> list[str]:
         """
@@ -56,6 +64,25 @@ class Dataset(object):
             categ_book_ids = set(self.categories_index.get(categ_token, []))
             book_ids = book_ids.union(categ_book_ids)
         return self._get_book_titles_from_ids(list(book_ids))
+
+    def get_books_by_title_token(self, token: str) -> list[str]:
+        """
+        Retrieves a list of book titles that contain the given token.
+
+        The search is case-insensitive and matches any book title that includes the token
+        when tokenized (e.g., "war" will match "The War of Art").
+
+        Args:
+            token (str): A lowercase or mixed-case token to search for within book titles.
+
+        Returns:
+            list[str]: A list of book titles that include the given token. 
+                    Returns an empty list if no matches are found.
+        """
+        token = token.lower().strip()
+        if not token or token not in self.titles_index:
+            return []
+        return [self._get_title_from_book_id(book_id) for book_id in self.titles_index[token]]
     
     def _get_book_titles_from_ids(self, books_ids: list[int]) -> list[str]:
         return [self._get_title_from_book_id(book_id) for book_id in books_ids]
@@ -188,3 +215,26 @@ class Dataset(object):
                 raise KeyError(f"Book ID '{book_id}' not found in index.")
 
         return self._book_id_to_title[book_id]
+
+    def _build_titles_index(self) -> dict[str, list[int]]:
+        """
+        Constructs and returns inverted index mapping tokens from book titles to book IDs.
+
+        This method tokenizes each book title and creates a mapping from each lowercase
+        token to the list of book IDs whose titles contain that token.
+
+        Returns:
+            dict[str, list[int]]: An inverted index where:
+                - Keys are lowercase tokens from book titles.
+                - Values are lists of book IDs (int) that contain the token in their title.
+        """
+        titles_index = defaultdict(set)
+        for title in self.books.keys():
+            book_id = self._get_book_id_from_title(title)
+            tokens = tokenize_text(title)
+            for token in tokens:
+                titles_index[token].add(book_id)
+        return {token: list(book_ids) for token, book_ids in titles_index.items()}
+        
+
+

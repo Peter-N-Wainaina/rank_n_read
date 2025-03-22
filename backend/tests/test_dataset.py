@@ -17,6 +17,8 @@ def test_dataset_init(dataset):
     assert isinstance(books, dict)
     assert len(books.items()) == 4
 
+    assert dataset.num_books == 4
+
     categ_index = dataset.categories_index
     categ_index_keys = categ_index.keys()
     assert len(categ_index_keys) == 6
@@ -27,8 +29,7 @@ def test_dataset_init(dataset):
     assert len(authors_index_keys) == 8
     assert "o'connor" in authors_index_keys
     assert "j.k" in authors_index_keys
-    assert len(authors_index["coauthor"]) == 2
-
+    assert len(authors_index["coauthor"]) == 2    
 
 def test_get_books_by_category(dataset):
     tech_books = dataset.get_books_by_category("Technology")
@@ -42,8 +43,6 @@ def test_get_books_by_category(dataset):
     assert dataset.get_books_by_category("Astrology") == []
     assert dataset.get_books_by_category(" ") == []
 
-
-
 def test_get_books_by_author(dataset):
     coauthor_books = dataset.get_books_by_author("coauthor")
     assert len(coauthor_books) == 2
@@ -53,3 +52,14 @@ def test_get_books_by_author(dataset):
 
     assert dataset.get_books_by_author("Unknown Author") == []
     assert dataset.get_books_by_author("") == []
+
+@pytest.mark.parametrize("token, expected_title ,expected_length",[
+    ("sample","Sample Book Two", 2), 
+    ("book", "Multi-Author Book", 4),
+    (" ", "", 0)
+])
+def test_get_books_by_title_token(dataset, token, expected_title, expected_length):
+    titles_with_token = dataset.get_books_by_title_token(token)
+    assert len(titles_with_token) == expected_length
+    if expected_title:
+        assert expected_title in titles_with_token
