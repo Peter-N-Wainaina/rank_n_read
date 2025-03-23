@@ -1,3 +1,4 @@
+import math
 import re
 import numpy as np
 from collections import Counter
@@ -101,45 +102,117 @@ class Processor(object):
         
         return score_books_dict
 
-    def get_recs_from_title(self, title: str, top_n=20) -> dict:
+    def compute_tf(self, tokens):
         """
-        Computes the similarity score for books based on a given title.
+        Compute the term frequency (TF) for each token in a list of tokens.
+        
+        Args:
+        tokens (list): A list of tokenized words from a document or query.
+        
+        Returns:
+        np.array: A NumPy array with terms as indices and their respective term frequency (TF) as values.
+        """
+        term_count = Counter(tokens)
+        total_terms = len(tokens)
+        tf = np.zeros(len(term_count)) 
+        
+        for i, (term, count) in enumerate(term_count.items()):
+            tf[i] = count / total_terms  
+        return tf
 
-        This function tokenizes the user input title, retrieves the books that 
-        contain the tokens, counts how many times each book appears, and then 
-        calculates and normalizes the similarity score. It then returns the top 
-        N books with the highest similarity scores.
+    def compute_idf(self, term, inverted_index, total_relevant_documents):
+        """
+        Compute the inverse document frequency (IDF) of a term using the number of relevant documents.
+        
+        Args:
+        term (str): The term whose IDF is to be calculated.
+        inverted_index (dict): A dictionary where keys are terms and values are lists of books containing those terms.
+        total_relevant_documents (int): The number of relevant documents (titles containing any token from the query title).
+        
+        Returns:
+        float: The IDF value of the term.
+        """
+        num_titles_with_term = len(inverted_index.get(term, [])) 
+        if num_titles_with_term == 0:
+            return 0
+        return math.log(total_relevant_documents / num_titles_with_term)
+
+
+    def cosine_similarity(self, query_tfidf, title_tfidf):
+        """
+        Compute the cosine similarity between two TF-IDF vectors using NumPy for vectorized operations.
+        
+        Args:
+        query_tfidf (np.array): The TF-IDF vector for the query.
+        title_tfidf (np.array): The TF-IDF vector for the title/document.
+        
+        Returns:
+        float: The cosine similarity score between the query and the title.
+        """
+        dot_product = np.dot(query_tfidf, title_tfidf)  
+        query_norm = np.linalg.norm(query_tfidf)  
+        title_norm = np.linalg.norm(title_tfidf)  
+        if query_norm == 0 or title_norm == 0:
+            return 0
+        return dot_product / (query_norm * title_norm) 
+
+    def create_inverted_index_for_title(self, title):
+        """
+        Generate the inverted index for a given title using the `get_books_by_title_token` function.
 
         Args:
-            title (str): The title of the book entered by the user. This is the 
-                        input title that will be tokenized and compared against 
-                        other books in the dataset.
-            top_n (int, optional): The number of top books to return based on their 
-                                similarity scores. Default is 20.
+        title (str): The title for which to generate the inverted index.
 
         Returns:
-            dict: A dictionary containing the book titles as keys and their 
-                normalized similarity scores as values. The dictionary is 
-                limited to the top N books with the highest similarity scores.
+        dict: The inverted index generated from the title, where each token maps to the list of relevant books containing that token.
         """
+        tokenized_title = tokenize_text(title) 
+        
+        inverted_index = {}
 
-        tokens = tokenize_text(title)
+        relevant_docs = set()
+
+        for term in tokenized_title:
+            books = self.dataset.get_books_by_title_token(term)
+            inverted_index[term] = books
+            relevant_docs.update(books)
         
-        combined_list = []
-        for token in tokens:
-            books = self.dataset.get_books_by_title_token(token)
-            combined_list.extend(books) 
+        total_relevant_documents = len(relevant_docs)
         
-        book_counts = Counter(combined_list) 
+        return inverted_index, relevant_docs, total_relevant_documents
+
+
+    def get_recs_from_title(self, title, top_n=20):
+        """
+        Get book recommendations based on the similarity to a given query title.
         
-        total_books = len(combined_list)
-        normalized_scores = {book: count / total_books for book, count in book_counts.items()}
+        Args:
+        title (str): The book title provided by the user for similarity search.
+        top_n (int, optional): The number of top similar titles to return. Defaults to 20.
         
-        sorted_books = sorted(normalized_scores.items(), key=lambda x: x[1], reverse=True)
+        Returns:
+        dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
+        """
+        inverted_index, relevant_docs,_   = self.create_inverted_index_for_title(title)
         
-        top_books = dict(sorted_books[:top_n])
+        tokenized_query = tokenize_text(title)  
+        query_tfidf = self.compute_tfidf(tokenized_query, inverted_index)
         
-        return top_books
+        similarity_scores = []
+        for book in relevant_docs:
+            book_tokens = tokenize_text(book) 
+            book_tfidf = self.compute_tfidf(book_tokens, inverted_index)
+            
+            similarity_score = self.cosine_similarity(query_tfidf, book_tfidf)
+            similarity_scores.append((book, similarity_score))
+        
+        similarity_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        top_n_similar_titles = similarity_scores[:top_n]
+        
+        result_books = {title: score for title, score in top_n_similar_titles}
+        
+        return result_books
     
     def get_recommended_books(self, user_input: dict[str: list[str]]) -> list[dict]:
         """    
