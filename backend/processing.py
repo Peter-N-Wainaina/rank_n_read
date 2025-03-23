@@ -149,6 +149,41 @@ class Processor(object):
         if num_titles_with_term == 0:
             return 0
         return math.log(total_relevant_documents / num_titles_with_term)
+    
+    def compute_tfidf(self, tokens, inverted_index, total_relevant_documents, vocab=None):
+        """
+        Compute the TF-IDF values for a list of tokens using NumPy for efficiency.
+        
+        Args:
+        tokens (list): A list of tokenized words from a title.
+        inverted_index (dict): A dictionary where keys are terms and values are lists of books containing those terms.
+        total_relevant_documents (int): The total number of relevant documents (books containing any token from the query title).
+        vocab (list, optional): A list of all unique tokens (vocabulary) across the query and books for alignment. Defaults to None.
+        
+        Returns:
+        np.array: A NumPy array of TF-IDF values for the tokens.
+        """
+        if vocab is None:
+            vocab = list(set(tokens))
+
+        term_count = Counter(tokens)
+        total_terms = len(tokens)
+        tf = np.zeros(len(vocab))
+        
+        token_to_index = {token: idx for idx, token in enumerate(vocab)}
+        
+        for term, count in term_count.items():
+            if term in token_to_index:
+                idx = token_to_index[term] 
+                tf[idx] = count / total_terms 
+
+        tfidf = np.zeros(len(vocab)) 
+        for term in vocab:
+            i = token_to_index[term] 
+            idf = self.compute_idf(term, inverted_index, total_relevant_documents)
+            tfidf[i] = tf[i] * idf
+            
+        return tfidf
 
 
     def cosine_similarity(self, query_tfidf, title_tfidf):
@@ -206,15 +241,24 @@ class Processor(object):
         Returns:
         dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
         """
-        inverted_index, relevant_docs,_   = self.create_inverted_index_for_title(title)
+        inverted_index, relevant_docs, _ = self.create_inverted_index_for_title(title)
         
-        tokenized_query = tokenize_text(title)  
-        query_tfidf = self.compute_tfidf(tokenized_query, inverted_index)
+        tokenized_query = tokenize_text(title)
+        
+        vocab = list(set(tokenized_query))
+        
+        for book in relevant_docs:
+            book_tokens = tokenize_text(book)
+            vocab.extend(list(set(book_tokens))) 
+        
+        vocab = list(set(vocab)) 
+
+        query_tfidf = self.compute_tfidf(tokenized_query, inverted_index, len(relevant_docs), vocab)
         
         similarity_scores = []
         for book in relevant_docs:
-            book_tokens = tokenize_text(book) 
-            book_tfidf = self.compute_tfidf(book_tokens, inverted_index)
+            book_tokens = tokenize_text(book)
+            book_tfidf = self.compute_tfidf(book_tokens, inverted_index, len(relevant_docs), vocab)
             
             similarity_score = self.cosine_similarity(query_tfidf, book_tfidf)
             similarity_scores.append((book, similarity_score))
@@ -226,6 +270,7 @@ class Processor(object):
         result_books = {title: score for title, score in top_n_similar_titles}
         
         return result_books
+
     
     def get_recommended_books(self, user_input: dict[str: list[str]]) -> list[dict]:
         """    
