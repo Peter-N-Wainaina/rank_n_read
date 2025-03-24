@@ -110,7 +110,7 @@
                     // Similarity Score
                     const score = document.createElement('p');
                     score.className = 'sim-score';
-                    score.textContent = book.score;
+                    score.textContent = book.score.toFixed(2);
                     left.appendChild(score);
 
                     card.appendChild(left);
