@@ -1,11 +1,11 @@
 import math
-import re
 import numpy as np
 from collections import Counter
-from math import isnan
 
 from .dataset import Dataset
 from .utils import tokenize_text, tokenize_name
+from .constants import DEFAULT_RECS_WEIGHTS, SCORE_KEY, INPUT_AUTHORS_KEY,\
+    INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE
 
 class Processor(object):
     def __init__(self, json_file=None):
@@ -272,59 +272,55 @@ class Processor(object):
         return result_books
 
     
-    def get_recommended_books(self, user_input: dict[str: list[str]]) -> list[dict]:
+    def get_recommended_books(self, user_input, output_size=DEFAULT_RECS_SIZE,\
+                               weights=DEFAULT_RECS_WEIGHTS) -> list[dict]:
         """    
             Returns a list of recommended books based on user input.
         """
-        #TODO: Add recommendation functionality
-        titles = user_input['titles']
-        authors = user_input['authors']
-        categories = user_input['categories']
+        titles = user_input[INPUT_TITLES_KEY] 
+        authors = user_input[INPUT_AUTHORS_KEY]
+        categories = user_input[INPUT_CATEGORIES_KEY]
 
         title = ""
         if titles:
-            title = titles[0]
+            title = titles[0] # TODO:Update to handle multiple titles
 
-        fields = (title, authors, categories)
-        funcs = (self.get_recs_from_title, self.get_recs_from_author, self.get_recs_from_categories)
-        results = []
+        title_recs = self.get_recs_from_title(title)
+        author_recs = self.get_recs_from_author(authors)
+        categ_recs = self.get_recs_from_categories(categories)
 
-        for field, func in zip(fields, funcs):
-            if field:
-                results.append(func(field))
-            else:
-                results.append({})
+        aggregated_recs = self._aggregate_recs(title_recs, author_recs, categ_recs, weights)   
+        top_sorted_recs = dict(sorted(aggregated_recs.items(), key=lambda x: x[1], reverse=True)[:output_size])
+        final_recs = self._add_score_field(top_sorted_recs)
 
-        title_recs, author_recs, categ_recs = results
+        return final_recs
 
-        merged = self._merge_recs(title_recs, author_recs, categ_recs, 0.6, 0.3, 0.1)
-        sorted_recs = sorted(merged, key=lambda x: x[1])
+    def _aggregate_recs(self, title_recs, author_recs, categs_recs, weights):
 
-        return_dict = []
-        for rec, score in sorted_recs:
-            rec_json = self.books[rec][0]
-            rec_json["score"] = score
+        title_recs = self._apply_weight(title_recs, weights.TITLES)
+        author_recs = self._apply_weight(author_recs, weights.AUTHORS)
+        categs_recs = self._apply_weight(categs_recs, weights.CATEGORIES)
 
-            new_json = {}
-            for key, value in rec_json.items():
-                if not (isinstance(value, str) or isinstance(value, list)):
-                    new_json[key]  = ""
-                else:
-                    new_json[key] = value
-            return_dict.append(new_json)
-
-            
-
-        return return_dict
-
-
-    def _merge_recs(self, title_recs, author_recs, categ_recs, x, y, z):
-        merged = []
-        all_keys = set(title_recs) | set(author_recs) | set(categ_recs)
-        
+        all_keys = set(title_recs.keys() | author_recs.keys() | categs_recs.keys())
+        final_recs = {}
         for key in all_keys:
             t_score = title_recs.get(key, 0)
             a_score = author_recs.get(key, 0)
-            c_score = categ_recs.get(key, 0)
-            merged.append((key, x * t_score + y * a_score + z * c_score))
-        return merged
+            c_score = categs_recs.get(key, 0)
+            final_recs[key] = a_score + t_score + c_score 
+        return final_recs
+    
+    def _apply_weight(self, recs, weight):
+        for key, score in recs.items():
+            updated_score = score * weight
+            recs[key] = round(updated_score,2)
+        return recs
+
+    def _add_score_field(self, scores):
+        books = []
+        for title, score in scores.items():
+            book = self.books[title][0] #TODO:Figure out how to handle books with same title in recommendation
+            book[SCORE_KEY] = score
+            books.append(book)
+        return books
+    

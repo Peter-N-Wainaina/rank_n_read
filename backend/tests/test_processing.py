@@ -1,5 +1,7 @@
-import os
 import pytest
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
 from backend.processing import Processor
 from test_constants import PROCESSOR_TEST_JSON
 
@@ -7,6 +9,22 @@ from test_constants import PROCESSOR_TEST_JSON
 def processor() -> Processor:
     """Fixture to create a Processor instance"""
     return Processor(PROCESSOR_TEST_JSON)
+
+@pytest.fixture
+def mock_recommendation_sources() -> Processor:
+    """Fixture that makes get_recs_by_* functions"""
+    processor = Processor()
+    processor.books = {
+        "book1": [{"title": "Book 1"}],
+        "book2": [{"title": "Book 2"}],
+        "book3": [{"title": "Book 3"}],
+        "book4": [{"title": "Book 4"}],
+        "book5": [{"title": "Book 5"}]
+    }
+    processor.get_recs_from_title = MagicMock(return_value={"book1": 0.3, "book2":0.5, "book4":0.2})
+    processor.get_recs_from_author = MagicMock(return_value={"book2": 0.2, "book3":0.2, "book4":0.6})
+    processor.get_recs_from_categories = MagicMock(return_value={"book3":0.1,"book5": 0.9})
+    return processor
 
 def test_compute_jaccard_similarity(processor):
     set1 = {"fear"}
@@ -64,3 +82,36 @@ def test_get_recs_from_author(processor):
     assert max_title == "Multi-Author Book", f"Exepected 'Multi-Author Book' but got {max_title}"
 
 
+MOCK_USER_INPUT = {
+        "titles": ["Some Title"],
+        "authors": ["Author Name"],
+        "categories": ["Category Name"]
+    }
+def test_recommendations_with_default_weights(mock_recommendation_sources):
+    processor = mock_recommendation_sources
+    weights = SimpleNamespace(TITLES=1, AUTHORS=1, CATEGORIES=1)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT, 3, weights=weights)
+
+    assert len(recs) == 3
+
+    titles = [book["title"] for book in recs]
+    assert set(titles) == {"Book 2", "Book 4", "Book 5"}
+
+    scores = [book["score"] for book in recs]
+    assert scores == sorted(scores, reverse=True)
+
+def test_recommendations_with_custom_weights(mock_recommendation_sources):
+    processor = mock_recommendation_sources
+
+    weights = SimpleNamespace(TITLES=0.3, AUTHORS=0.0, CATEGORIES=0.7)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT, 1, weights)
+
+    assert recs[0]["title"] == "Book 5"
+    assert len(recs) == 1
+
+def test_recommendations_with_small_output_size(mock_recommendation_sources):
+    processor = mock_recommendation_sources
+    weights = SimpleNamespace(TITLES=1, AUTHORS=1, CATEGORIES=1)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT, 1, weights)
+
+    assert recs[0]["title"] == "Book 5"
