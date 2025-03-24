@@ -1,5 +1,7 @@
 import os
+from unittest.mock import MagicMock
 import pytest
+import numpy as np
 from backend.processing import Processor
 from test_constants import PROCESSOR_TEST_JSON
 
@@ -63,4 +65,117 @@ def test_get_recs_from_author(processor):
     max_title = max(recs3, key=recs3.get)
     assert max_title == "Multi-Author Book", f"Exepected 'Multi-Author Book' but got {max_title}"
 
+
+# Test for compute_tf method
+def test_compute_tf(processor):
+    tokens = ['catcher', 'rye', 'in', 'the', 'catcher']
+    
+    # Test Term Frequency calculation
+    tf = processor.compute_tf(tokens)
+    
+    # Expected term frequencies for the tokens
+    expected_tf = np.array([2/5, 1/5, 1/5, 1/5])  # 'catcher' appears twice, others appear once
+    
+    np.testing.assert_array_almost_equal(tf, expected_tf, err_msg="TF calculation failed!")
+
+
+# Test for compute_idf method
+def test_compute_idf(processor):
+    inverted_index = {
+        'catcher': ['Book1', 'Book2'],
+        'rye': ['Book1', 'Book3'],
+        'in': ['Book1', 'Book4'],
+        'the': ['Book2', 'Book4']
+    }
+    
+    total_relevant_documents = 4
+    idf_catcher = processor.compute_idf('catcher', inverted_index, total_relevant_documents)
+    idf_rye = processor.compute_idf('rye', inverted_index, total_relevant_documents)
+    
+    expected_idf_catcher = np.log(4 / 2)  
+    expected_idf_rye = np.log(4 / 2)
+
+    assert np.isclose(idf_catcher, expected_idf_catcher), f"Expected IDF for 'catcher' is {expected_idf_catcher}, but got {idf_catcher}"
+    assert np.isclose(idf_rye, expected_idf_rye), f"Expected IDF for 'rye' is {expected_idf_rye}, but got {idf_rye}"
+
+
+# Test for compute_tfidf method
+def test_compute_tfidf(processor):
+    tokens = ['catcher', 'rye', 'in', 'the']
+    inverted_index = {
+        'catcher': ['Book1', 'Book2'],
+        'rye': ['Book1', 'Book3'],
+        'in': ['Book1', 'Book4'],
+        'the': ['Book2', 'Book4']
+    }
+    total_relevant_documents = 4
+    vocab = ['catcher', 'rye', 'in', 'the']
+    
+    tfidf = processor.compute_tfidf(tokens, inverted_index, total_relevant_documents, vocab)
+    
+    # Manually compute expected TF-IDF for each term
+    tf_catcher = 1 / 4  
+    tf_rye = 1 / 4    
+    tf_in = 1 / 4  
+    tf_the = 1 / 4  
+
+    idf_catcher = np.log(4 / 2) 
+    idf_rye = np.log(4 / 2)    
+    idf_in = np.log(4 / 2) 
+    idf_the = np.log(4 / 2) 
+
+    # Expected TF-IDF values for each term in vocab
+    expected_tfidf = np.array([
+        tf_catcher * idf_catcher, 
+        tf_rye * idf_rye, 
+        tf_in * idf_in,  
+        tf_the * idf_the 
+    ])
+    
+    # Check if computed TF-IDF matches expected values
+    np.testing.assert_array_almost_equal(tfidf, expected_tfidf, err_msg="TF-IDF calculation failed!")
+
+
+# Test for cosine_similarity method
+def test_cosine_similarity(processor):
+    query_tfidf = np.array([1, 0]) 
+    book_tfidf = np.array([1, 0])   
+    similarity = processor.cosine_similarity(query_tfidf, book_tfidf)
+    assert similarity == 1.0, f"Expected 1.0 but got {similarity}"
+
+    book_tfidf_orthogonal = np.array([0, 1]) 
+    similarity_orthogonal = processor.cosine_similarity(query_tfidf, book_tfidf_orthogonal)
+    assert similarity_orthogonal == 0.0, f"Expected 0.0 but got {similarity_orthogonal}"
+
+
+
+# Test for create_inverted_index_for_title method
+def test_create_inverted_index_for_title(processor):
+    processor.dataset.get_books_by_title_token = MagicMock(return_value=["Book1", "Book2"])
+
+    title = "The Catcher in the Rye"
+    inverted_index, relevant_docs, total_relevant_documents = processor.create_inverted_index_for_title(title)
+
+    expected_inverted_index = {
+        'catcher': ['Book1', 'Book2'],
+        'rye': ['Book1', 'Book2'],
+        'the': ['Book1', 'Book2'],
+        'in': ['Book1', 'Book2']
+    }
+    
+    assert inverted_index == expected_inverted_index, f"Expected {expected_inverted_index} but got {inverted_index}"
+    assert relevant_docs == {'Book1', 'Book2'}, f"Expected relevant docs to be {{'Book1', 'Book2'}} but got {relevant_docs}"
+    assert total_relevant_documents == 2, f"Expected total relevant documents to be 2 but got {total_relevant_documents}"
+
+
+# Test for get_recs_from_title method
+def test_get_recs_from_title(processor):
+    processor.dataset.get_books_by_title_token = MagicMock(return_value=["Book1", "Book2", "Book3"])
+    
+    title = "The Catcher in the Rye"
+    recommended_books = processor.get_recs_from_title(title, top_n=3)
+    
+    assert isinstance(recommended_books, dict), "Expected the result to be a dictionary"
+    assert len(recommended_books) == 3, f"Expected 3 recommendations, but got {len(recommended_books)}"
+    assert "Book1" in recommended_books, "Expected 'Book1' to be in the recommendations"
 

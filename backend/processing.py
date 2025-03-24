@@ -177,6 +177,7 @@ class Processor(object):
                 idx = token_to_index[term] 
                 tf[idx] = count / total_terms 
 
+
         tfidf = np.zeros(len(vocab)) 
         for term in vocab:
             i = token_to_index[term] 
