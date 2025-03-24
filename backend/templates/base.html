@@ -28,15 +28,18 @@
             <div class="container-sm" id="form">
                 <div class="mb-3">
                     <label for="bookTitle" class="form-label">Book Title</label>
-                    <input type="text" class="form-control" id="bookTitle" placeholder="Enter a book title">
+                    <input type="text" class="form-control" id="bookTitle" list="title-suggestions" placeholder="Enter a title">
+                    <datalist id="title-suggestions"></datalist>
                   </div>
                   <div class="mb-3">
                     <label for="author" class="form-label">Author</label>
-                    <input type="text" class="form-control" id="author" placeholder="Enter an author">
+                    <input type="text" class="form-control" id="author" list="author-suggestions" placeholder="Enter an author">
+                    <datalist id="author-suggestions"></datalist>
                   </div>
                   <div class="mb-3">
                     <label for="category" class="form-label">Category</label>
-                    <input type="text" class="form-control" id="category" placeholder="Enter comma-separated categories">
+                    <input type="text" class="form-control" id="category" list="category-suggestions" placeholder="Enter comma-separated categories">
+                    <datalist id="category-suggestions"></datalist>
                   </div>
                   <div class="d-grid gap-2 col-6 mx-auto" id="rec-button">
                     <button class="btn btn-primary" type="button">Find Recommendations</button>
@@ -154,6 +157,78 @@
                 })
                 .catch(error => console.error('Error fetching books:', error));
             });
+
+            function debounce(func, delay) {
+                let timeoutId;
+                return function (...args) {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+        //     document.getElementById("bookTitle").addEventListener("input", function () {
+        //     const query = this.value.trim();
+
+        //     console.log("User typed:", query);
+
+        //     if (query.length < 2) return;
+
+        //     fetch(`/titles?q=${encodeURIComponent(query)}`)
+        //     .then(res => res.json())
+        //     .then(data => {
+        //         console.log("Received suggestions:", data);
+        //         const datalist = document.getElementById("title-suggestions");
+        //         datalist.innerHTML = "";
+
+        //         data.forEach(title => {
+        //         const option = document.createElement("option");
+        //         option.value = title;
+        //         datalist.appendChild(option);
+        //         });
+        //     })
+        //     .catch(err => console.error("Error fetching title suggestions:", err));
+        // });
+        // document.getElementById("author").addEventListener("input", function () {
+        // const query = this.value.trim();
+        // if (query.length < 2) return;
+
+        // fetch(`http://localhost:5001/authors?q=${encodeURIComponent(query)}`)
+        //     .then(res => res.json())
+        //     .then(data => {
+        //     const datalist = document.getElementById("author-suggestions");
+        //     datalist.innerHTML = "";
+
+        //     data.forEach(author => {
+        //         const option = document.createElement("option");
+        //         option.value = author;
+        //         datalist.appendChild(option);
+        //     });
+        //     })
+        //     .catch(err => console.error("Error fetching author suggestions:", err));
+        // });
+
+        const categoryInput = document.getElementById("category")
+
+        categoryInput.addEventListener("input", debounce(function () {
+            const fullValue = this.value;
+            const parts = fullValue.split(",");
+            const currentInput = parts[parts.length - 1].trim();
+            if (currentInput.length < 2) return;
+
+            fetch(`http://localhost:5001/categories?q=${encodeURIComponent(currentInput)}`)
+                .then(res => res.json())
+                .then(data => {
+                const datalist = document.getElementById("category-suggestions");
+                datalist.innerHTML = "";
+
+                data.forEach(category => {
+                    const option = document.createElement("option");
+                    const newParts = [...parts.slice(0, -1), category];
+                    option.value = newParts.join(", ");
+                    datalist.appendChild(option);
+                });
+                })
+                .catch(err => console.error("Error fetching category suggestions:", err));
+            },200)); // wait 200ms after last keystroke
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
