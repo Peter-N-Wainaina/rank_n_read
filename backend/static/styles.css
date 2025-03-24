@@ -106,8 +106,16 @@
 .card-left {
     display: flex;
     flex-direction: column;
+    vertical-align: middle;
+}
+
+.sim {
+    text-align: center;
 }
 
 .sim-score {
     font-weight: bold;
+    text-align: center;
+    font-size: 2em;
 }
+
