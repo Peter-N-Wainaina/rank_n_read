@@ -4,6 +4,7 @@ Docker/__pycache__
 
 venv/
 project-venv/
+test-env/
 
 *.pyc
 __pycache__/
