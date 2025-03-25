@@ -55,24 +55,22 @@
     </div>
     
     <script>
-        document.getElementById("rec-button").addEventListener("click", function() {
-            //Get Raw Inputs values
-            const titleRaw = document.getElementById("bookTitle").value;
-            const authorRaw = document.getElementById("author").value;
-            const categoryRaw = document.getElementById("category").value;
+    document.getElementById("rec-button").addEventListener("click", function() {
+    // Get input values and process them
+        const titleRaw = document.getElementById("bookTitle").value;
+        const authorRaw = document.getElementById("author").value;
+        const categoryRaw = document.getElementById("category").value;
 
-            //Process raw inputs to arrays
-            const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
-            const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
-            const categories = categoryRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+        const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+        const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
+        const categories = categoryRaw.split(",").map(item => item.trim()).filter(item => item !== "");
 
-            console.log(titles);
-            console.log(authors);
-            console.log(categories);
+        // Display loading message
+        const container = document.getElementById('books-container');
+        container.innerHTML = '<p class="loading">Loading...</p>';
 
-
+        setTimeout(() => {
             fetch('/getbooks', {
-                //send data to backend
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -83,17 +81,18 @@
                     categories: categories
                 }),
             })
-                .then(response => response.json())
-                .then(data => {
-                const container = document.getElementById('books-container');
+            .then(response => response.json())
+            .then(data => {
+                // Clear the loading message
                 container.innerHTML = '';
+
                 data.forEach(book => {
-                    // Book card container
+                    // Create book card container
                     const card = document.createElement('div');
                     card.className = 'book-card';
-                    
+
                     const left = document.createElement('div');
-                    left.className = 'card-left'
+                    left.className = 'card-left';
 
                     // Image
                     const image = document.createElement('img');
@@ -104,8 +103,8 @@
 
                     const similar = document.createElement('p');
                     similar.className = 'sim';
-                    similar.textContent = "Similarity Score"
-                    left.appendChild(similar)
+                    similar.textContent = "Similarity Score";
+                    left.appendChild(similar);
 
                     // Similarity Score
                     const score = document.createElement('p');
@@ -115,48 +114,51 @@
 
                     card.appendChild(left);
 
-                    console.log(book.categories)
-                    
-                    // Container for text information.
+                    // Container for text information
                     const info = document.createElement('div');
                     info.className = 'book-info';
-                    
+
                     // Title
                     const title = document.createElement('div');
                     title.className = 'book-title';
                     title.textContent = book.title ?? "Title Not Available";
                     info.appendChild(title);
-                    
+
                     // Categories 
-                    const categories = document.createElement('p');
-                    categories.className = 'book-meta';
-                    categories.textContent = 'Categories: ' + ((Array.isArray(book.categories) ? book.categories.join(', ') : book.categories) ?? 'Uncategorized');
-                    info.appendChild(categories);
-                    
+                    const categoriesEl = document.createElement('p');
+                    categoriesEl.className = 'book-meta';
+                    categoriesEl.textContent = 'Categories: ' + ((Array.isArray(book.categories) ? book.categories.join(', ') : book.categories) ?? 'Uncategorized');
+                    info.appendChild(categoriesEl);
+
                     // Author(s)
-                    const authors = document.createElement('p');
-                    authors.className = 'book-meta';
-                    authors.textContent = 'Author(s): ' + ((Array.isArray(book.authors) ? book.authors.join(', ') : book.authors) ?? 'Author Not Available');
-                    info.appendChild(authors);
-                    
+                    const authorsEl = document.createElement('p');
+                    authorsEl.className = 'book-meta';
+                    authorsEl.textContent = 'Author(s): ' + ((Array.isArray(book.authors) ? book.authors.join(', ') : book.authors) ?? 'Author Not Available');
+                    info.appendChild(authorsEl);
+
                     // Published Date
                     const publishedDate = document.createElement('p');
                     publishedDate.className = 'book-meta';
                     publishedDate.textContent = 'Published Date: ' + (book.publishDate ?? 'Unknown');
                     info.appendChild(publishedDate);
-                    
+
                     // Description
                     const description = document.createElement('p');
                     description.className = 'book-description';
                     description.textContent = book.description.toString() ?? 'Description Unavailable';
                     info.appendChild(description);
-                    
+
                     card.appendChild(info);
                     container.appendChild(card);
                 });
-                })
-                .catch(error => console.error('Error fetching books:', error));
+            })
+            .catch(error => {
+                console.error('Error fetching books:', error);
+                container.innerHTML = '<p class="error">Error loading books. Please try again.</p>';
             });
+        }, 1000); 
+    });
+
 
             function debounce(func, delay) {
                 let timeoutId;
