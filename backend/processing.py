@@ -14,6 +14,8 @@ class Processor(object):
             dataset = Dataset(json_file)
         self.dataset = dataset
         self.books = self.dataset.books
+        self.title_vocab = self.dataset.title_vocab_frequency
+
     
     def compute_jaccard_similarity(self, query_categories, book_categories):
         """
@@ -229,8 +231,32 @@ class Processor(object):
         total_relevant_documents = len(relevant_docs)
         
         return inverted_index, relevant_docs, total_relevant_documents
+    
+    def remove_common_words_from_title(self, title: str, num_books,  frequency_threshold: float = 0.80,) -> str:
+        """
+        Removes common words from a book title based on their document frequency across the dataset.
 
+        A word is considered "common" if it appears in more than `frequency_threshold` fraction of all titles 
+        (e.g., 0.05 means remove words that appear in more than 5% of book titles).
 
+        Args:
+            title (str): The original book title.
+            frequency_threshold (float): A value between 0 and 1 indicating the maximum allowed document frequency 
+                                        for a word to be retained in the cleaned title.
+
+        Returns:
+            str: The input title with common words removed based on the specified frequency threshold.
+        """
+        def is_common(token):
+            return self.title_vocab[token] / num_books >= frequency_threshold
+        
+        tokens = tokenize_text(title)
+        new_tokens = []
+        for token in tokens:
+            if not is_common(token):
+                new_tokens.append(token)
+        return " ".join(new_tokens)
+        
     def get_recs_from_title(self, title, top_n=20):
         """
         Get book recommendations based on the similarity to a given query title.
@@ -242,8 +268,9 @@ class Processor(object):
         Returns:
         dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
         """
+        title = self.remove_common_words_from_title(title, self.dataset.num_books)
+
         inverted_index, relevant_docs, _ = self.create_inverted_index_for_title(title)
-        
         tokenized_query = tokenize_text(title)
         
         vocab = list(set(tokenized_query))

@@ -231,3 +231,48 @@ def test_recommendations_with_small_output_size(mock_recommendation_sources):
     recs = processor.get_recommended_books(MOCK_USER_INPUT, 1, weights)
 
     assert recs[0]["title"] == "Book 5"
+
+def test_remove_common_words_removes_expected_tokens():
+    processor = Processor()
+    processor.title_vocab = {
+        "the": 5,      # 100%
+        "of": 4,       # 80%
+        "great": 2,    # 40%
+        "escape": 1    # 20%
+    }
+    num_books = 5
+    result = processor.remove_common_words_from_title("The Great Escape",num_books, frequency_threshold=0.5)
+    assert result == "great escape"
+
+def test_remove_common_words_removes_more_with_lower_threshold():
+    processor = Processor()
+    processor.title_vocab = {
+        "the": 5,
+        "great": 4,
+        "escape": 1
+    }
+    num_books = 5
+    result = processor.remove_common_words_from_title("The Great Escape",num_books,frequency_threshold=0.3)
+    assert result == "escape"
+
+def test_remove_common_words_with_high_threshold_removes_nothing():
+    processor = Processor()
+    processor.title_vocab = {
+        "the": 5,
+        "great": 4,
+        "escape": 1
+    }
+    num_books = 6
+    result = processor.remove_common_words_from_title("The Great Escape", num_books, frequency_threshold=1)
+    assert result == "the great escape"
+
+def test_remove_common_words_all_tokens_removed():
+    processor = Processor()
+    processor.title_vocab = {
+        "the": 5,
+        "great": 5,
+        "escape": 5
+    }
+    num_books = 5
+    result = processor.remove_common_words_from_title("The Great Escape", num_books,frequency_threshold=0.8)
+    assert result == ""

@@ -27,7 +27,7 @@ def test_dataset_init(dataset):
     assert len(authors_index_keys) == 8
     assert "o'connor" in authors_index_keys
     assert "j.k" in authors_index_keys
-    assert len(authors_index["coauthor"]) == 2    
+    assert len(authors_index["coauthor"]) == 2  
 
 def test_get_books_by_category(dataset):
     tech_books = dataset.get_books_by_category("Technology")
@@ -61,3 +61,24 @@ def test_get_books_by_title_token(dataset, token, expected_title, expected_lengt
     assert len(titles_with_token) == expected_length
     if expected_title:
         assert expected_title in titles_with_token
+
+def test_build_title_vocab_frequency():
+    dataset = Dataset()
+    dataset.books = {
+        "The Great Adventure": [{}],
+        "Great Expectations": [{}],
+        "The Silent Patient": [{}],
+    }
+
+    expected = {
+        "the": 2,
+        "great": 2,
+        "adventure": 1,
+        "expectations": 1,
+        "silent": 1,
+        "patient": 1,
+    }
+
+    vocab = dataset._build_title_vocab_frequency()
+    assert vocab == expected
+

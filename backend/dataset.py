@@ -1,4 +1,3 @@
-import os
 import json
 from collections import defaultdict
 
@@ -13,6 +12,7 @@ class Dataset(object):
         self.authors_index = self._build_authors_index()
         self.categories_index = self._build_categories_index()
         self.titles_index = self._build_titles_index()
+        self.title_vocab_frequency = self._build_title_vocab_frequency()
     
     @property
     def num_books(self) -> int:
@@ -235,6 +235,28 @@ class Dataset(object):
             for token in tokens:
                 titles_index[token].add(book_id)
         return {token: list(book_ids) for token, book_ids in titles_index.items()}
+    
+    def _build_title_vocab_frequency(self) -> dict[str, int]:
+        """
+        Constructs a vocabulary frequency dictionary from book titles.
+
+        For each token (word) that appears in any book title, this function counts
+        how many distinct book titles (i.e., documents) contain that token. The result 
+        is a dictionary mapping each token to the number of titles it appears in.
+
+        Returns:
+            dict[str, int]: A dictionary where:
+                - Keys are lowercase tokens extracted from book titles.
+                - Values are integers representing how many unique titles contain each token.
+        """
+        vocab_freq = defaultdict(int)
+        for title in self.books.keys():
+            unique_tokens = set(tokenize_text(title))
+            for token in unique_tokens:
+                vocab_freq[token] += 1
+        return vocab_freq
+
+
         
 
 
