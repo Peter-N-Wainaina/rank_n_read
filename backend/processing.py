@@ -298,6 +298,23 @@ class Processor(object):
         result_books = {title: score for title, score in top_n_similar_titles}
         
         return result_books
+    
+
+    def get_recs_by_description(descripton, title, authors, categories):
+        """
+        Get books recomendations based on the books description of the book
+
+        Args:
+        Description (str): Description provided by the user for similarity search cannot be empty string
+        Title (str): A title provided by the user for similarity search and can be empty string
+        Authors (list): Authors provided by the user for similarity search, can be an empty list
+        Categories (list): Categories provided by the user and can be an empty list
+
+        Return:
+        dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
+        """
+
+
 
     
     def get_recommended_books(self, user_input, output_size=DEFAULT_RECS_SIZE,\
