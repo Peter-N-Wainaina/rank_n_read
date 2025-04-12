@@ -4,6 +4,7 @@ from types import SimpleNamespace
 CATEGORY_KEY = "categories"
 AUTHOR_KEY = "authors"
 SCORE_KEY = "score"
+DESCRIPTION_KEY = "description"
 
 NOT_AVAILABLE = "NOT AVAILABLE"
 

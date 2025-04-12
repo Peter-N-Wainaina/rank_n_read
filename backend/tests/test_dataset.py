@@ -82,3 +82,22 @@ def test_build_title_vocab_frequency():
     vocab = dataset._build_title_vocab_frequency()
     assert vocab == expected
 
+def test_build_book_data_dict(dataset):
+    book_data_dict = dataset.book_data_dict 
+
+    assert isinstance(book_data_dict, dict)
+    assert len(book_data_dict) == 4
+
+    data_one = book_data_dict["Sample Book One"]
+    assert "test description for book one" in data_one
+    assert "j.k rawling" in data_one
+    assert "fiction" in data_one
+    assert "adventure" in data_one
+
+    data_two = book_data_dict["Edge Case Book"]
+    assert "this book has no categories listed" in data_two
+    assert "charlie coauthor" in data_two
+    assert "edge case book" in data_two
+
+    assert data_one == data_one.lower()
+    assert data_two == data_two.lower()

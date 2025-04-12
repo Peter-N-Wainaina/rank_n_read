@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 
 from .config import DEFAULT_BOOKS_JSON_FILE
-from .constants import CATEGORY_KEY, AUTHOR_KEY
+from .constants import CATEGORY_KEY, AUTHOR_KEY, DESCRIPTION_KEY
 from .utils import tokenize_text, tokenize_name
 
 class Dataset(object):
@@ -13,6 +13,7 @@ class Dataset(object):
         self.categories_index = self._build_categories_index()
         self.titles_index = self._build_titles_index()
         self.title_vocab_frequency = self._build_title_vocab_frequency()
+        self.book_data_dict = self._build_book_data_dict()
     
     @property
     def num_books(self) -> int:
@@ -256,7 +257,29 @@ class Dataset(object):
                 vocab_freq[token] += 1
         return vocab_freq
 
+    def _build_book_data_dict(self) -> dict[str, str]:
+        """
+        Constructs a dictionary mapping book titles to their associated textual data.
 
-        
+        Args:
+            raw_data (list of dict): A list of dictionaries where each dictionary contains 
+                metadata for a single book (e.g., title, description, author, categories, etc).
 
+        Returns:
+            dict: A dictionary where the key is the book title (str) and the value is a 
+                concatenated lowercase string of relevant book data (e.g. title + author + description + categories)
 
+        """
+        book_data_dict = defaultdict(str)
+        for title,books in self.books.items():
+            data_parts = []
+            for book in books:
+                description = book.get(DESCRIPTION_KEY, "")
+                authors = " ".join(book.get(AUTHOR_KEY, []))
+                categories = " ".join(book.get(CATEGORY_KEY, []))
+                combined = f"{title} {description} {authors} {categories}"
+                data_parts.append(combined.lower())
+
+            book_data_dict[title] = " ".join(data_parts)  
+          
+        return book_data_dict
