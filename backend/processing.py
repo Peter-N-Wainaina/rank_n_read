@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter
 
 from .dataset import Dataset
-from .utils import tokenize_text, tokenize_name
+from .utils import tokenize_text, tokenize_name_list, tokenize_list
 from .constants import DEFAULT_RECS_WEIGHTS, SCORE_KEY, INPUT_AUTHORS_KEY,\
     INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE
 
@@ -47,10 +47,7 @@ class Processor(object):
             dict:
                 A dictionary of book titles and their scores based on categrories
         """
-        modified_query = []
-        for compound_query in query:
-            ls = tokenize_text(compound_query)
-            modified_query.extend(ls)
+        modified_query = tokenize_list(query)
         # put the titles you get from Dataset.get_books_by_category in a set to take care of dups
         titles_by_category_set = set()
         for category in modified_query:
@@ -64,10 +61,7 @@ class Processor(object):
         query_categories_set = set(modified_query)
         for title in titles_by_category_set:
             book_info = self.books[title][0]
-            book_categories_ls = []
-            for comp_category in book_info["categories"]:
-                ls = tokenize_text(comp_category)
-                book_categories_ls.extend(ls)
+            book_categories_ls = tokenize_list(book_info["categories"])
             book_categories_set = set(book_categories_ls)
             sim_score = self.compute_jaccard_similarity(query_categories_set, book_categories_set)
             score_title_dict[title] = sim_score
@@ -88,10 +82,7 @@ class Processor(object):
             dict:
                 A dictionary of book titles and their scores based on their authors
         """
-        modified_authors = []
-        for author in authors:
-            ls = tokenize_name(author)
-            modified_authors.extend(ls)
+        modified_authors = tokenize_name_list(authors)
         # put the titles you get from Dataset.get_books_by_author in a set to take care of dups
         titles_by_authors_set = set()
         for author in modified_authors:
@@ -107,10 +98,7 @@ class Processor(object):
         score_books_dict = {}
         for title in titles_by_authors_set:
             book_info = self.books[title][0]
-            modified_authors_from_book = []
-            for author in book_info["authors"]:
-                ls = tokenize_name(author)
-                modified_authors_from_book.extend(ls)
+            modified_authors_from_book = tokenize_name_list(book_info["authors"])
             book_authors_set = set(modified_authors_from_book)
             sim_score = self.compute_jaccard_similarity(authors_set, book_authors_set)
             score_books_dict[title] = sim_score
@@ -313,8 +301,7 @@ class Processor(object):
         Return:
         dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
         """
-
-
+        pass
 
     
     def get_recommended_books(self, user_input, output_size=DEFAULT_RECS_SIZE,\

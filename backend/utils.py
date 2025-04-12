@@ -28,3 +28,33 @@ def tokenize_name(name: str) -> list[str]:
     """
     cleaned = re.sub(r"\s+", " ", name.strip().lower())     # Collapse multiple spaces and normalize
     return re.findall(r"[a-z]+'[a-z]+|[a-z]+(?:\.[a-z]+)*", cleaned)     # Match dot-separated initials and words (e.g. 'j.k.', 'rowling', "o'connor")
+
+def tokenize_name_list(authors_ls: list[str]) -> list[str]:
+    """
+    Tokenizes a list of names, preserving dot-separated initials (e.g., 'J.K.') as a single token.
+
+    Args:
+        authors_ls (list[str]): List of author names
+
+    Returns:
+        list[str]: List of tokenized author names
+    """
+    tokenized_ls = []
+    for name in authors_ls:
+        tokenized_ls.extend(tokenize_name(name))
+    return tokenized_ls
+
+def tokenize_list(ls: list[str]) -> list[str]:
+    """
+    Tokenizes a list
+
+    Args:
+        authors_ls (list[str]): List strings
+
+    Returns:
+        list[str]: List of tokenized strings
+    """
+    tokenized_ls = []
+    for item in ls:
+        tokenized_ls.extend(tokenize_text(item))
+    return tokenized_ls
