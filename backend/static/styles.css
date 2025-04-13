@@ -58,22 +58,25 @@
 
 #books-container {
     margin-top: 40px;
-    width: 70%;
-    display: flex;
-    flex-direction: column;
+    width: 90%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    justify-items: center;
 }
 
 .book-card {
+    width: 100%;
+    max-width: 400px;
+    cursor: pointer;
     border: 1px solid #ccc;
     border-radius: 10px;
-    padding: 15px;
-    margin: 15px;
-    box-shadow: 1px 1px 10px rgba(0, 51, 255, 0.5);
+    padding: 10px;
+    box-shadow: 1px 1px 10px rgba(0, 51, 255, 0.3);
     background-color: #fff;
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
+    transition: transform 0.3s;
 }
+
 
 .book-card:hover {
     transform: scale(1.02);
@@ -88,7 +91,7 @@
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 5px;
-    color: rgba(0, 51, 255, 0.5);
+    color: rgba(0, 51, 255, 0.6);
 }
   
 .book-meta {
@@ -119,7 +122,50 @@
     font-size: 2em;
 }
 
+h2 {
+    color: rgba(0, 51, 255, 0.6) !important;
+}
+
 .loading {
     font-size: 2em;
     
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-content {
+    background-color: #fff !important;
+    opacity: 1 !important;
+    backdrop-filter: none;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #333;
 }
