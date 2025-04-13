@@ -23,6 +23,18 @@ def books_search():
     result_json = jsonify(books)
     return result_json
 
+@app.route("/test", methods=["POST"])
+def test():
+    body = request.get_json()
+
+    title:str = body["title"]
+    authors:list[str] = body["authors"]
+    cats:list[str] = body["categories"]
+    des:str = body["description"]
+    res = processor.get_recs_by_description(des, title, authors, cats)
+    return jsonify(res)
+
+
 # @app.route("/titles")
 # def get_title_suggestions():
 #     query = request.args.get("q", "").lower()
