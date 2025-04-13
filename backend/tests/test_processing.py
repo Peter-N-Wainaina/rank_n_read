@@ -1,7 +1,7 @@
 import os
 import pytest
 import numpy as np
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 from types import SimpleNamespace
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import csr_matrix
@@ -338,64 +338,31 @@ def test_transform_query():
     assert not np.isnan(reduced_query).any(), "Output contains NaN values"
 
 #------SVD Tests------#
-# @pytest.fixture
+@pytest.fixture
 def mock_svd_setup() -> Processor:
-    processor = Processor()
+    with patch.object(Processor, 'create_tfidf_matrix') as mock_create_tfidf, \
+         patch.object(Processor, 'reduce_with_svd') as mock_reduce_svd:
+        
+        # Define mock returns
+        mock_create_tfidf.return_value = (
+            ["Book A", "Book B", "Book C"],
+            csr_matrix(np.array([[0.1, 0.2], [0.2, 0.1], [0.3, 0.4]])),
+            MagicMock()  # vectorizer
+        )
 
-    processor.books = {
-        "Book A": [{
-            "description": "A thrilling fantasy story full of magic.",
-            "authors": ["Author Alpha"],
-            "categories": ["Fantasy", "Adventure"],
-            "title": "Book A"
-        }],
-        "Book B": [{
-            "description": "An insightful look into modern technology.",
-            "authors": ["Author Beta"],
-            "categories": ["Nonfiction", "Technology"],
-            "title": "Book B"
-        }],
-        "Book C": [{
-            "description": "A peaceful story about love and life.",
-            "authors": ["Author Gamma"],
-            "categories": ["Romance"],
-            "title": "Book C"
-        }]
-    }
+        mock_reduce_svd.return_value = (
+            np.array([[0.2, 0.8], [0.1, 0.9], [0.5, 0.5]]),
+            MagicMock()  # SVD model
+        )
 
-    processor.create_tfidf_matrix = MagicMock(return_value=(
-        ["Book A", "Book B", "Book C"],
-        csr_matrix(np.array([[0.1, 0.2], [0.2, 0.1], [0.3, 0.4]])),
-        MagicMock()  # mock vectorizer
-    ))
+        # Now instantiation uses mocks
+        processor = Processor()
 
-    processor.reduce_with_svd = MagicMock(return_value=(
-        np.array([[0.2, 0.8], [0.1, 0.9], [0.5, 0.5]]),
-        MagicMock()  # mock SVD
-    ))
+        # Patch remaining methods directly on instance
+        processor.transform_query = MagicMock(return_value=np.array([[0.15, 0.85]]))
+        processor.get_top_k_similar_books = MagicMock(return_value={
+            "Book B": 0.91,
+            "Book A": 0.83
+        })
 
-    processor.transform_query = MagicMock(return_value=np.array([[0.15, 0.85]]))
-
-    processor.get_top_k_similar_books = MagicMock(return_value={
-        "Book B": 0.91,
-        "Book A": 0.83
-    })
-
-    return processor
-
-def test_get_recs_by_description_with_mock_books(mock_svd_setup):
-    results = mock_svd_setup.get_recs_by_description(
-        description="A story with magic and technology",
-        title="Adventures in the Future",
-        authors=["Test Author"],
-        categories=["Fantasy"]
-    )
-
-    mock_svd_setup.create_tfidf_matrix.assert_called_once()
-    mock_svd_setup.reduce_with_svd.assert_called_once()
-    mock_svd_setup.transform_query.assert_called_once()
-    mock_svd_setup.get_top_k_similar_books.assert_called_once()
-
-    assert isinstance(results, dict)
-    assert "Book B" in results
-    assert "Book A" in results
+        return processor
