@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
+from scipy.sparse import csr_matrix
 
 from backend.processing import Processor
 from test_constants import PROCESSOR_TEST_JSON
@@ -320,3 +321,66 @@ def test_transform_query():
     assert isinstance(reduced_query, np.ndarray), "Output should be a numpy array"
     assert reduced_query.shape == (1, 2), f"Expected shape (1, 2) but got {reduced_query.shape}"
     assert not np.isnan(reduced_query).any(), "Output contains NaN values"
+
+#------SVD Tests------#
+# @pytest.fixture
+def mock_svd_setup() -> Processor:
+    processor = Processor()
+
+    processor.books = {
+        "Book A": [{
+            "description": "A thrilling fantasy story full of magic.",
+            "authors": ["Author Alpha"],
+            "categories": ["Fantasy", "Adventure"],
+            "title": "Book A"
+        }],
+        "Book B": [{
+            "description": "An insightful look into modern technology.",
+            "authors": ["Author Beta"],
+            "categories": ["Nonfiction", "Technology"],
+            "title": "Book B"
+        }],
+        "Book C": [{
+            "description": "A peaceful story about love and life.",
+            "authors": ["Author Gamma"],
+            "categories": ["Romance"],
+            "title": "Book C"
+        }]
+    }
+
+    processor.create_tfidf_matrix = MagicMock(return_value=(
+        ["Book A", "Book B", "Book C"],
+        csr_matrix(np.array([[0.1, 0.2], [0.2, 0.1], [0.3, 0.4]])),
+        MagicMock()  # mock vectorizer
+    ))
+
+    processor.reduce_with_svd = MagicMock(return_value=(
+        np.array([[0.2, 0.8], [0.1, 0.9], [0.5, 0.5]]),
+        MagicMock()  # mock SVD
+    ))
+
+    processor.transform_query = MagicMock(return_value=np.array([[0.15, 0.85]]))
+
+    processor.get_top_k_similar_books = MagicMock(return_value={
+        "Book B": 0.91,
+        "Book A": 0.83
+    })
+
+    return processor
+
+def test_get_recs_by_description_with_mock_books(mock_svd_setup):
+    results = mock_svd_setup.get_recs_by_description(
+        description="A story with magic and technology",
+        title="Adventures in the Future",
+        authors=["Test Author"],
+        categories=["Fantasy"]
+    )
+
+    mock_svd_setup.create_tfidf_matrix.assert_called_once()
+    mock_svd_setup.reduce_with_svd.assert_called_once()
+    mock_svd_setup.transform_query.assert_called_once()
+    mock_svd_setup.get_top_k_similar_books.assert_called_once()
+
+    assert isinstance(results, dict)
+    assert "Book B" in results
+    assert "Book A" in results

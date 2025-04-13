@@ -20,3 +20,6 @@ DEFAULT_RECS_WEIGHTS = SimpleNamespace(
 )
 
 DEFAULT_RECS_SIZE = 20
+
+# Processor Constants
+NUM_LATENT_SEMANTIC_CONCEPTS = 100
