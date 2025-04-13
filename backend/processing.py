@@ -294,7 +294,7 @@ class Processor(object):
         
         return result_books
     
-    def create_tfidf_matrix(books: dict) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
+    def create_tfidf_matrix(self, books: dict) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
         """
         Generate a TF-IDF matrix from a dictionary of books
         
@@ -308,7 +308,13 @@ class Processor(object):
                 - A sparse matrix of TF-IDF features (rows = books, columns = terms).
                 - The trained TfidfVectorizer, which can be reused for transforming queries later.
         """
-        pass
+        titles: List[str] = list(books.keys())        
+        texts: List[str] = list(books.values())             
+
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=100_000)
+        tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts) 
+
+        return titles, tfidf_matrix, vectorizer
 
     def reduce_with_svd(tfidf_matrix: csr_matrix, n_components: int = 100) -> Tuple[np.ndarray, TruncatedSVD]:
         """
@@ -327,7 +333,7 @@ class Processor(object):
         """
         pass
 
-    def transform_query(query_text: str, vectorizer: TfidfVectorizer, svd: TruncatedSVD) -> np.ndarray:
+    def transform_query(self, query_text: str, vectorizer: TfidfVectorizer, svd: TruncatedSVD) -> np.ndarray:
         """
         Transforms a user query string into the same reduced-dimensional semantic space as the books.
 
@@ -343,7 +349,10 @@ class Processor(object):
             np.ndarray:
                 A 1D array representing the query in reduced semantic space (shape: 1 x n_components).
         """
-        pass
+        query_tfidf = vectorizer.transform([query_text])  # returns sparse vector
+        reduced_query = svd.transform(query_tfidf)        # returns 1 x n_components dense vector
+
+        return reduced_query
 
     def get_top_k_similar_books(query_vec: np.ndarray, book_vecs: np.ndarray, book_titles: List[str], k: int = 5) -> List[str]:
         """
