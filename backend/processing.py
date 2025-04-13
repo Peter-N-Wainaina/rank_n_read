@@ -294,7 +294,7 @@ class Processor(object):
         
         return result_books
     
-    def create_tfidf_matrix(books: dict) -> (list, scipy.sparse matrix, TfidfVectorizer):
+    def create_tfidf_matrix(books: dict) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
         """
         Generate a TF-IDF matrix from a dictionary of books
         
