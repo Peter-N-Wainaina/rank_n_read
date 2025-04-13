@@ -345,8 +345,12 @@ class Processor(object):
                 - A dense matrix of reduced-dimensional representations of books (shape: num_books × n_components).
                 - The fitted TruncatedSVD object, for projecting future queries into the same space.
         """
+        n_features = tfidf_matrix.shape[1]
+        if n_components >= n_features:
+            n_components = n_features - 1
+            
         svd_model = TruncatedSVD(n_components)
-        reduced_matrix = svd_model.fit(tfidf_matrix)
+        reduced_matrix = svd_model.fit_transform(tfidf_matrix)
         return reduced_matrix, svd_model
 
     def transform_query(self, query_text: str, vectorizer: TfidfVectorizer, svd: TruncatedSVD) -> np.ndarray:
@@ -424,8 +428,12 @@ class Processor(object):
 
         composite_query = f"{description} {title} {' '.join(authors)} {' '.join(categories)}"
         composite_query = " ".join(composite_query.split())
+        assert type(composite_query) == str
 
         query_vec = self.transform_query(composite_query, self.vectorizer, self.svd_model)
+        if isinstance(self.book_vecs, TruncatedSVD):
+            raise TypeError("book_vecs should be a matrix, not a model. Did you pass self.svd_model by mistake?")
+
         top_matches = self.get_top_k_similar_books(query_vec, self.book_vecs, self.book_titles)
         return top_matches
 
