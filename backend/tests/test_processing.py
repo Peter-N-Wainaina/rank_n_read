@@ -3,6 +3,11 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 from types import SimpleNamespace
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import csr_matrix
+from sklearn.decomposition import TruncatedSVD
+
+from scipy.sparse import csr_matrix
 
 from backend.processing import Processor
 from test_constants import PROCESSOR_TEST_JSON
@@ -276,3 +281,121 @@ def test_remove_common_words_all_tokens_removed():
     num_books = 5
     result = processor.remove_common_words_from_title("The Great Escape", num_books,frequency_threshold=0.8)
     assert result == ""
+
+def test_create_tfidf_matrix():
+    processor = Processor()
+
+    books = {
+        "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)": [
+            {
+                "title": "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)",
+                "description": "The tremendous world-wide interest in intelligent biometric techniques in fingerprint and face recognition is fueled by the myriad of potential applications, including banking and security systems...",
+                "authors": ["Shigeyoshi Tsutsui"],
+                "categories": ["Technology & Engineering"]
+            }
+        ],
+        "The Art of Fly Tying (The Hunting & Fishing Library)": [
+            {
+                "title": "The Art of Fly Tying (The Hunting & Fishing Library)",
+                "description": "-- Shows the tools you need to tie any popular fly pattern. -- Includes all the basic elements of popular fly patterns -- Features over 200 classic and new patterns.",
+                "authors": ["John Van Vliet"],
+                "categories": ["Sports & Recreation"]
+            }
+        ]
+    }
+
+    titles, tfidf_matrix, vectorizer = processor.create_tfidf_matrix(books)
+
+    # Assertions
+    assert isinstance(titles, list), "Titles should be a list"
+    assert isinstance(tfidf_matrix, csr_matrix), "TF-IDF matrix should be a sparse matrix"
+    assert isinstance(vectorizer, TfidfVectorizer), "Should return a TfidfVectorizer"
+
+    assert len(titles) == len(books), "Number of titles should match number of books"
+    assert tfidf_matrix.shape[0] == len(books), "Number of rows in TF-IDF matrix should match number of books"
+
+
+def test_transform_query():
+    processor = Processor()
+    books = {
+        "Book One": "A thrilling journey through space and time.",
+        "Book Two": "A deep dive into technological advancements and AI.",
+        "Book Three": "Romance and mystery woven in a historical setting."
+    }
+    descriptions = list(books.values())
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(descriptions)
+
+    svd = TruncatedSVD(n_components=2, random_state=42)
+    svd.fit(tfidf_matrix)
+
+    query_text = "space and AI"
+    reduced_query = processor.transform_query(query_text, vectorizer, svd)
+
+    assert isinstance(reduced_query, np.ndarray), "Output should be a numpy array"
+    assert reduced_query.shape == (1, 2), f"Expected shape (1, 2) but got {reduced_query.shape}"
+    assert not np.isnan(reduced_query).any(), "Output contains NaN values"
+
+#------SVD Tests------#
+# @pytest.fixture
+def mock_svd_setup() -> Processor:
+    processor = Processor()
+
+    processor.books = {
+        "Book A": [{
+            "description": "A thrilling fantasy story full of magic.",
+            "authors": ["Author Alpha"],
+            "categories": ["Fantasy", "Adventure"],
+            "title": "Book A"
+        }],
+        "Book B": [{
+            "description": "An insightful look into modern technology.",
+            "authors": ["Author Beta"],
+            "categories": ["Nonfiction", "Technology"],
+            "title": "Book B"
+        }],
+        "Book C": [{
+            "description": "A peaceful story about love and life.",
+            "authors": ["Author Gamma"],
+            "categories": ["Romance"],
+            "title": "Book C"
+        }]
+    }
+
+    processor.create_tfidf_matrix = MagicMock(return_value=(
+        ["Book A", "Book B", "Book C"],
+        csr_matrix(np.array([[0.1, 0.2], [0.2, 0.1], [0.3, 0.4]])),
+        MagicMock()  # mock vectorizer
+    ))
+
+    processor.reduce_with_svd = MagicMock(return_value=(
+        np.array([[0.2, 0.8], [0.1, 0.9], [0.5, 0.5]]),
+        MagicMock()  # mock SVD
+    ))
+
+    processor.transform_query = MagicMock(return_value=np.array([[0.15, 0.85]]))
+
+    processor.get_top_k_similar_books = MagicMock(return_value={
+        "Book B": 0.91,
+        "Book A": 0.83
+    })
+
+    return processor
+
+def test_get_recs_by_description_with_mock_books(mock_svd_setup):
+    results = mock_svd_setup.get_recs_by_description(
+        description="A story with magic and technology",
+        title="Adventures in the Future",
+        authors=["Test Author"],
+        categories=["Fantasy"]
+    )
+
+    mock_svd_setup.create_tfidf_matrix.assert_called_once()
+    mock_svd_setup.reduce_with_svd.assert_called_once()
+    mock_svd_setup.transform_query.assert_called_once()
+    mock_svd_setup.get_top_k_similar_books.assert_called_once()
+
+    assert isinstance(results, dict)
+    assert "Book B" in results
+    assert "Book A" in results

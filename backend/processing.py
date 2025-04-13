@@ -5,7 +5,14 @@ from collections import Counter
 from .dataset import Dataset
 from .utils import tokenize_text, tokenize_name_list, tokenize_list
 from .constants import DEFAULT_RECS_WEIGHTS, SCORE_KEY, INPUT_AUTHORS_KEY,\
-    INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE
+    INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE, NUM_LATENT_SEMANTIC_CONCEPTS
+
+from typing import List, Tuple, Dict
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.sparse import csr_matrix
+
 
 class Processor(object):
     def __init__(self, json_file=None):
@@ -15,7 +22,8 @@ class Processor(object):
         self.dataset = dataset
         self.books = self.dataset.books
         self.title_vocab = self.dataset.title_vocab_frequency
-
+        self.book_titles, self.tfidf_matrix, self.vectorizer = self.create_tfidf_matrix(self.books)
+        self.book_vecs, self.svd_model = self.reduce_with_svd(self.tfidf_matrix)
     
     def compute_jaccard_similarity(self, query_categories, book_categories):
         """
@@ -287,21 +295,139 @@ class Processor(object):
         
         return result_books
     
-
-    def get_recs_by_description(descripton, title, authors, categories):
+    def create_tfidf_matrix(self, books: dict) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
         """
-        Get books recomendations based on the books description of the book
+        Generate a TF-IDF matrix from a dictionary of books
+        
+        Args:
+            books (Dict[str, str]):
+                A dictionary mapping each book title to its description text.
+
+        Returns:
+            Tuple[List[str], csr_matrix, TfidfVectorizer]:
+                - A list of book titles, preserving the order corresponding to the TF-IDF matrix rows.
+                - A sparse matrix of TF-IDF features (rows = books, columns = terms).
+                - The trained TfidfVectorizer, which can be reused for transforming queries later.
+        """
+        titles: List[str] = []
+        texts: List[str] = []
+
+        for title, entries in books.items():
+            if not entries:
+                continue  
+
+            book = entries[0]  
+            desc = book.get("description", "")
+            authors = " ".join(book.get("authors", []))
+            categories = " ".join(book.get("categories", []))
+            full_text = f"{title} {desc} {authors} {categories}".strip()
+
+            titles.append(title)
+            texts.append(full_text)
+
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=100_000)
+        tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts)
+
+        return titles, tfidf_matrix, vectorizer
+
+    def reduce_with_svd(self, tfidf_matrix: csr_matrix, n_components: int = NUM_LATENT_SEMANTIC_CONCEPTS) -> Tuple[np.ndarray, TruncatedSVD]:
+        """
+        Reduce the dimensionality of a TF-IDF matrix using Truncated Singular Value Decomposition (LSI).
 
         Args:
-        Description (str): Description provided by the user for similarity search cannot be empty string
-        Title (str): A title provided by the user for similarity search and can be empty string
-        Authors (list): Authors provided by the user for similarity search, can be an empty list
-        Categories (list): Categories provided by the user and can be an empty list
+            tfidf_matrix (csr_matrix):
+                The TF-IDF matrix of book descriptions (rows = books, columns = terms).
+            n_components (int):
+                The number of dimensions (latent semantic concepts) to retain.
 
-        Return:
-        dict: A dictionary where the keys are book titles and the values are their similarity scores, sorted by similarity.
+        Returns:
+            Tuple[np.ndarray, TruncatedSVD]:
+                - A dense matrix of reduced-dimensional representations of books (shape: num_books × n_components).
+                - The fitted TruncatedSVD object, for projecting future queries into the same space.
         """
-        pass
+        svd_model = TruncatedSVD(n_components)
+        reduced_matrix = svd_model.fit(tfidf_matrix)
+        return reduced_matrix, svd_model
+
+    def transform_query(self, query_text: str, vectorizer: TfidfVectorizer, svd: TruncatedSVD) -> np.ndarray:
+        """
+        Transforms a user query string into the same reduced-dimensional semantic space as the books.
+
+        Args:
+            query_text (str):
+                The raw text of the user query (e.g., "scary and exciting").
+            vectorizer (TfidfVectorizer):
+                The trained vectorizer used on the book descriptions.
+            svd (TruncatedSVD):
+                The trained SVD transformer used to reduce the book vectors.
+
+        Returns:
+            np.ndarray:
+                A 1D array representing the query in reduced semantic space (shape: 1 x n_components).
+        """
+        query_tfidf = vectorizer.transform([query_text])  # returns sparse vector
+        reduced_query = svd.transform(query_tfidf)        # returns 1 x n_components dense vector
+
+        return reduced_query
+
+    def get_top_k_similar_books(self, query_vec: np.ndarray, book_vecs: np.ndarray, book_titles: List[str], k: int = 5) -> Dict[str, float]:
+        """
+        Compute cosine similarity between a query vector and all book vectors to retrieve the most similar titles.
+
+        Args:
+            query_vec (np.ndarray):
+                The reduced-dimensional query vector (1 x n_components).
+            book_vecs (np.ndarray):
+                The reduced-dimensional matrix of book vectors (num_books x n_components).
+            book_titles (List[str]):
+                A list of book titles, ordered to match the rows of `book_vecs`.
+            k (int):
+                The number of top results to return.
+
+        Returns:
+            Dict[str, float]:
+                A dictionary mapping top book titles to their cosine similarity scores.
+
+        """
+        cos_sims = cosine_similarity(query_vec, book_vecs)
+        flattened_cos_sim_scores = cos_sims.flatten()
+        sorted_indices = np.argsort(flattened_cos_sim_scores)[::-1]
+        top_k_indices = sorted_indices[:k]
+        top_matches = {book_titles[i]: flattened_cos_sim_scores[i] for i in top_k_indices}
+        return top_matches
+
+
+    def get_recs_by_description(self, description: str, title: str, authors: List[str], categories: List[str]) -> Dict[str, float]:
+        """
+        Generate book recommendations based on a combined semantic query from description, title, authors, and categories.
+
+        Args:
+            description (str):
+                The main description or keywords of the book.
+                This is the only required field and must not be empty.
+            title (str):
+                An optional title string to incorporate into the query.
+            authors (List[str]):
+                An optional list of author names.
+            categories (List[str]):
+                An optional list of category labels (e.g., genres or themes).
+
+        Returns:
+            Dict[str, float]:
+                A dictionary mapping book titles to their similarity scores with the query,
+                sorted in descending order of similarity.
+        """
+        description = tokenize_text(description)
+        title = tokenize_text(title)
+        authors = tokenize_name_list(authors)
+        categories = tokenize_list(categories)
+
+        composite_query = f"{description} {title} {' '.join(authors)} {' '.join(categories)}"
+        composite_query = " ".join(composite_query.split())
+
+        query_vec = self.transform_query(composite_query, self.vectorizer, self.svd_model)
+        top_matches = self.get_top_k_similar_books(query_vec, self.book_vecs, self.book_titles)
+        return top_matches
 
     
     def get_recommended_books(self, user_input, output_size=DEFAULT_RECS_SIZE,\
