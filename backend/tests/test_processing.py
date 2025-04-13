@@ -284,20 +284,35 @@ def test_remove_common_words_all_tokens_removed():
 
 def test_create_tfidf_matrix():
     processor = Processor()
+
     books = {
-        "Book One": "A thrilling journey through space and time.",
-        "Book Two": "A deep dive into technological advancements and AI.",
-        "Book Three": "Romance and mystery woven in a historical setting."
+        "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)": [
+            {
+                "title": "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)",
+                "description": "The tremendous world-wide interest in intelligent biometric techniques in fingerprint and face recognition is fueled by the myriad of potential applications, including banking and security systems...",
+                "authors": ["Shigeyoshi Tsutsui"],
+                "categories": ["Technology & Engineering"]
+            }
+        ],
+        "The Art of Fly Tying (The Hunting & Fishing Library)": [
+            {
+                "title": "The Art of Fly Tying (The Hunting & Fishing Library)",
+                "description": "-- Shows the tools you need to tie any popular fly pattern. -- Includes all the basic elements of popular fly patterns -- Features over 200 classic and new patterns.",
+                "authors": ["John Van Vliet"],
+                "categories": ["Sports & Recreation"]
+            }
+        ]
     }
 
     titles, tfidf_matrix, vectorizer = processor.create_tfidf_matrix(books)
 
+    # Assertions
     assert isinstance(titles, list), "Titles should be a list"
     assert isinstance(tfidf_matrix, csr_matrix), "TF-IDF matrix should be a sparse matrix"
     assert isinstance(vectorizer, TfidfVectorizer), "Should return a TfidfVectorizer"
 
     assert len(titles) == len(books), "Number of titles should match number of books"
-    assert tfidf_matrix.shape[0] == len(books)
+    assert tfidf_matrix.shape[0] == len(books), "Number of rows in TF-IDF matrix should match number of books"
 
 
 def test_transform_query():

@@ -309,11 +309,24 @@ class Processor(object):
                 - A sparse matrix of TF-IDF features (rows = books, columns = terms).
                 - The trained TfidfVectorizer, which can be reused for transforming queries later.
         """
-        titles: List[str] = list(books.keys())        
-        texts: List[str] = list(books.values())             
+        titles: List[str] = []
+        texts: List[str] = []
+
+        for title, entries in books.items():
+            if not entries:
+                continue  
+
+            book = entries[0]  
+            desc = book.get("description", "")
+            authors = " ".join(book.get("authors", []))
+            categories = " ".join(book.get("categories", []))
+            full_text = f"{title} {desc} {authors} {categories}".strip()
+
+            titles.append(title)
+            texts.append(full_text)
 
         vectorizer = TfidfVectorizer(stop_words="english", max_features=100_000)
-        tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts) 
+        tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts)
 
         return titles, tfidf_matrix, vectorizer
 
