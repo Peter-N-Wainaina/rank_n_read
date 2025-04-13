@@ -3,6 +3,10 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 from types import SimpleNamespace
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import csr_matrix
+from sklearn.decomposition import TruncatedSVD
+
 
 from backend.processing import Processor
 from test_constants import PROCESSOR_TEST_JSON
@@ -276,3 +280,43 @@ def test_remove_common_words_all_tokens_removed():
     num_books = 5
     result = processor.remove_common_words_from_title("The Great Escape", num_books,frequency_threshold=0.8)
     assert result == ""
+
+def test_create_tfidf_matrix():
+    processor = Processor()
+    books = {
+        "Book One": "A thrilling journey through space and time.",
+        "Book Two": "A deep dive into technological advancements and AI.",
+        "Book Three": "Romance and mystery woven in a historical setting."
+    }
+
+    titles, tfidf_matrix, vectorizer = processor.create_tfidf_matrix(books)
+
+    assert isinstance(titles, list), "Titles should be a list"
+    assert isinstance(tfidf_matrix, csr_matrix), "TF-IDF matrix should be a sparse matrix"
+    assert isinstance(vectorizer, TfidfVectorizer), "Should return a TfidfVectorizer"
+
+    assert len(titles) == len(books), "Number of titles should match number of books"
+    assert tfidf_matrix.shape[0] == len(books)
+
+
+def test_transform_query():
+    processor = Processor()
+    books = {
+        "Book One": "A thrilling journey through space and time.",
+        "Book Two": "A deep dive into technological advancements and AI.",
+        "Book Three": "Romance and mystery woven in a historical setting."
+    }
+    descriptions = list(books.values())
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(descriptions)
+
+    svd = TruncatedSVD(n_components=2, random_state=42)
+    svd.fit(tfidf_matrix)
+
+    query_text = "space and AI"
+    reduced_query = processor.transform_query(query_text, vectorizer, svd)
+
+    assert isinstance(reduced_query, np.ndarray), "Output should be a numpy array"
+    assert reduced_query.shape == (1, 2), f"Expected shape (1, 2) but got {reduced_query.shape}"
+    assert not np.isnan(reduced_query).any(), "Output contains NaN values"
