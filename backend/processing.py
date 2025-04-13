@@ -7,6 +7,13 @@ from .utils import tokenize_text, tokenize_name_list, tokenize_list
 from .constants import DEFAULT_RECS_WEIGHTS, SCORE_KEY, INPUT_AUTHORS_KEY,\
     INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE
 
+from typing import List, Tuple, Dict
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.sparse import csr_matrix
+
+
 class Processor(object):
     def __init__(self, json_file=None):
         dataset = Dataset()
@@ -287,6 +294,77 @@ class Processor(object):
         
         return result_books
     
+    def create_tfidf_matrix(books: dict) -> (list, scipy.sparse matrix, TfidfVectorizer):
+        """
+        Generate a TF-IDF matrix from a dictionary of books
+        
+        Args:
+            books (Dict[str, str]):
+                A dictionary mapping each book title to its description text.
+
+        Returns:
+            Tuple[List[str], csr_matrix, TfidfVectorizer]:
+                - A list of book titles, preserving the order corresponding to the TF-IDF matrix rows.
+                - A sparse matrix of TF-IDF features (rows = books, columns = terms).
+                - The trained TfidfVectorizer, which can be reused for transforming queries later.
+        """
+        pass
+
+    def reduce_with_svd(tfidf_matrix: csr_matrix, n_components: int = 100) -> Tuple[np.ndarray, TruncatedSVD]:
+        """
+        Reduce the dimensionality of a TF-IDF matrix using Truncated Singular Value Decomposition (LSI).
+
+        Args:
+            tfidf_matrix (csr_matrix):
+                The TF-IDF matrix of book descriptions (rows = books, columns = terms).
+            n_components (int):
+                The number of dimensions (latent semantic concepts) to retain.
+
+        Returns:
+            Tuple[np.ndarray, TruncatedSVD]:
+                - A dense matrix of reduced-dimensional representations of books (shape: num_books × n_components).
+                - The fitted TruncatedSVD object, for projecting future queries into the same space.
+        """
+        pass
+
+    def transform_query(query_text: str, vectorizer: TfidfVectorizer, svd: TruncatedSVD) -> np.ndarray:
+        """
+        Transforms a user query string into the same reduced-dimensional semantic space as the books.
+
+        Args:
+            query_text (str):
+                The raw text of the user query (e.g., "scary and exciting").
+            vectorizer (TfidfVectorizer):
+                The trained vectorizer used on the book descriptions.
+            svd (TruncatedSVD):
+                The trained SVD transformer used to reduce the book vectors.
+
+        Returns:
+            np.ndarray:
+                A 1D array representing the query in reduced semantic space (shape: 1 x n_components).
+        """
+        pass
+
+    def get_top_k_similar_books(query_vec: np.ndarray, book_vecs: np.ndarray, book_titles: List[str], k: int = 5) -> List[str]:
+        """
+        Compute cosine similarity between a query vector and all book vectors to retrieve the most similar titles.
+
+        Args:
+            query_vec (np.ndarray):
+                The reduced-dimensional query vector (1 x n_components).
+            book_vecs (np.ndarray):
+                The reduced-dimensional matrix of book vectors (num_books x n_components).
+            book_titles (List[str]):
+                A list of book titles, ordered to match the rows of `book_vecs`.
+            k (int):
+                The number of top results to return.
+
+        Returns:
+            List[str]:
+                A list of the top `k` book titles ranked by similarity to the query.
+        """
+        pass
+
 
     def get_recs_by_description(descripton, title, authors, categories):
         """
