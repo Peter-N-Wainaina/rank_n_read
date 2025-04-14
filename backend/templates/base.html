@@ -97,8 +97,9 @@
                 .then(response => response.json())
                 .then(data => {
 
+                    container.innerHTML = '<p class="loading"> </p>';
+
                     if (data.length === 0) {
-                        container.innerHTML = '';
 
                         const noResultsCard = document.createElement('div');
                         noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card';
@@ -112,8 +113,6 @@
                         container.appendChild(noResultsCard);
                         return;
                     }
-
-                    container.innerHTML = '';
 
                     const bookList = [];
 
@@ -193,6 +192,14 @@
             const score = document.createElement('p');
             score.innerHTML = `<strong>Similarity Score:</strong> ${book.score?.toFixed(2) ?? 'N/A'}`;
             modalContent.appendChild(score);
+
+            const link = document.createElement('p');
+            if (book.previewLink) {
+                link.innerHTML = `<strong>Preview Link:</strong> <a href="${book.previewLink}" target="_blank" rel="noopener noreferrer">click here</a>`;
+            } else {
+                link.innerHTML = `<strong>Preview Link:</strong> N/A`;
+            }
+            modalContent.appendChild(link);
 
             const description = document.createElement('p');
             description.innerHTML = `<strong>Description:</strong> ${book.description ?? 'No description available.'}`;
