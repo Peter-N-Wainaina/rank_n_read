@@ -382,7 +382,7 @@ class Processor(object):
 
         return reduced_query
 
-    def get_top_k_similar_books(self, query_vec: np.ndarray, book_vecs: np.ndarray, book_titles: List[str], k: int = 5) -> Dict[str, float]:
+    def get_top_k_similar_books(self, query_vec: np.ndarray, book_vecs: np.ndarray, book_titles: List[str], k: int = 30) -> Dict[str, float]:
         """
         Compute cosine similarity between a query vector and all book vectors to retrieve the most similar titles.
 
