@@ -457,7 +457,7 @@ class Processor(object):
             title = titles[0] # TODO:Update to handle multiple titles
 
         if description:
-            top_sorted_recs = self.get_recs_by_description(description, titles, authors, categories)
+            top_sorted_recs = self.get_recs_by_description(description, title, authors, categories)
         else:
             title_recs = self.get_recs_from_title(title)
             author_recs = self.get_recs_from_author(authors)

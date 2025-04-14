@@ -71,7 +71,7 @@
             const titleRaw = document.getElementById("bookTitle").value;
             const authorRaw = document.getElementById("author").value;
             const categoryRaw = document.getElementById("category").value;
-            const description = document.getElementById("freeText")
+            const description = document.getElementById("freeText").value;
 
             const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
             const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
