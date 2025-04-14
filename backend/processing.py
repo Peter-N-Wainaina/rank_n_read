@@ -436,12 +436,8 @@ class Processor(object):
 
         composite_query = f"{description} {title} {' '.join(authors)} {' '.join(categories)}"
         composite_query = " ".join(composite_query.split())
-        assert type(composite_query) == str
 
         query_vec = self.transform_query(composite_query, self.vectorizer, self.svd_model)
-        if isinstance(self.book_vecs, TruncatedSVD):
-            raise TypeError("book_vecs should be a matrix, not a model. Did you pass self.svd_model by mistake?")
-
         top_matches = self.get_top_k_similar_books(query_vec, self.book_vecs, self.book_titles)
         return top_matches
 
