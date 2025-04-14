@@ -41,6 +41,10 @@
                     <input type="text" class="form-control" id="category" list="category-suggestions" placeholder="Enter comma-separated categories">
                     <datalist id="category-suggestions"></datalist>
                   </div>
+                  <div class="mb-3">
+                    <label for="floatingTextarea" class="form-label">Description</label>
+                    <textarea class="form-control" placeholder="Enter description" id="freeText"></textarea>
+                  </div>
                   <div class="d-grid gap-2 col-6 mx-auto" id="rec-button">
                     <button class="btn btn-primary" type="button">Find Recommendations</button>
                   </div>
@@ -67,6 +71,7 @@
             const titleRaw = document.getElementById("bookTitle").value;
             const authorRaw = document.getElementById("author").value;
             const categoryRaw = document.getElementById("category").value;
+            const description = document.getElementById("freeText")
 
             const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
             const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
@@ -85,11 +90,27 @@
                     body: JSON.stringify({
                         titles: titles,
                         authors: authors,
-                        categories: categories
+                        categories: categories,
+                        description: description
                     }),
                 })
                 .then(response => response.json())
                 .then(data => {
+
+                    if (data.length === 0) {
+                        const noResultsCard = document.createElement('div');
+                        noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card';
+
+                        noResultsCard.innerHTML = `
+                            <div class="emoji" style="font-size: 50px; margin-bottom: 15px;">😕📚</div>
+                            <h5>No books found</h5>
+                            <p>Try a different query.</p>
+                        `;
+
+                        container.appendChild(noResultsCard);
+                        return;
+                    }
+
                     container.innerHTML = '';
 
                     const bookList = [];
@@ -256,7 +277,7 @@
                 });
                 })
                 .catch(err => console.error("Error fetching category suggestions:", err));
-            },200)); // wait 200ms after last keystroke
+            },50)); // wait 50ms after last keystroke
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
