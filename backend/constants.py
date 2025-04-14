@@ -5,6 +5,9 @@ CATEGORY_KEY = "categories"
 AUTHOR_KEY = "authors"
 SCORE_KEY = "score"
 DESCRIPTION_KEY = "description"
+AVG_RATING_KEY = "avg_rating"
+PRICE_KEY = "price"
+REVIEWS_KEY = "reviews"
 
 NOT_AVAILABLE = "NOT AVAILABLE"
 

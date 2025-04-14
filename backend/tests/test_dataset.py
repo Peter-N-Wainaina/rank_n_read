@@ -2,13 +2,12 @@ import pytest
 import os 
 
 from backend.dataset import Dataset
-from test_constants import BOOKS_TEST_JSON
-
+from test_constants import BOOKS_TEST_JSON, REVIEWS_TEST_JSON
 
 @pytest.fixture
 def dataset() -> Dataset:
     """Fixture to create a Dataset instance"""
-    return Dataset(BOOKS_TEST_JSON)
+    return Dataset(BOOKS_TEST_JSON, REVIEWS_TEST_JSON)
 
 def test_dataset_init(dataset):
     books = dataset.books    
@@ -101,3 +100,25 @@ def test_build_book_data_dict(dataset):
 
     assert data_one == data_one.lower()
     assert data_two == data_two.lower()
+
+def test_merged_reviews_exist(dataset):
+    book = dataset.books["Sample Book One"][0]
+    assert "avg_rating" in book
+    assert "price" in book
+    assert "reviews" in book
+
+    assert isinstance(book["avg_rating"], float) or book["avg_rating"] is None
+    assert isinstance(book["price"], str) or book["price"] is None
+    assert isinstance(book["reviews"], list)
+
+def test_reviews_preserved_correctly(dataset):
+    book = dataset.books["Multi-Author Book"][0]
+    assert isinstance(book["reviews"], list)
+    assert len(book["reviews"]) == 3
+    assert "collaboration" in book["reviews"][1].lower()
+
+def test_books_with_missing_reviews(dataset):
+    book = dataset.books["Sample Book Two"][0]
+    assert book["reviews"] == []
+    assert book["avg_rating"] is None
+    assert book["price"] is None

@@ -1,13 +1,21 @@
 import json
 from collections import defaultdict
 
-from .config import DEFAULT_BOOKS_JSON_FILE
-from .constants import CATEGORY_KEY, AUTHOR_KEY, DESCRIPTION_KEY
+from .config import DEFAULT_BOOKS_JSON_FILE, DEFAULT_REVIEWS_JSON_FILE
 from .utils import tokenize_text, tokenize_name
+from .constants import (
+    AVG_RATING_KEY,
+    PRICE_KEY,
+    REVIEWS_KEY,
+    DESCRIPTION_KEY,
+    AUTHOR_KEY,
+    CATEGORY_KEY,
+)
 
 class Dataset(object):
-    def __init__(self, json_file=DEFAULT_BOOKS_JSON_FILE):
-        self.books = self._load_books(json_file)
+    def __init__(self, books_json=DEFAULT_BOOKS_JSON_FILE, reviews_json=DEFAULT_REVIEWS_JSON_FILE):
+        self.books = self._merge_books_and_reviews(books_json, reviews_json)
+
         self._book_title_to_id, self._book_id_to_title = self._build_book_index()
         self.authors_index = self._build_authors_index()
         self.categories_index = self._build_categories_index()
@@ -108,11 +116,62 @@ class Dataset(object):
                 - `title` (str): Full title of the book.
         """
         return self._load_json_file(json_file)
+    
+    def _load_reviews(self, json_file: str) -> dict:
+        """
+        Reads reviews from a JSON file and returns them as a dictionary.
+
+        Args:
+            json_file (str): The path to the JSON file containing reviews data.
+
+        Returns:
+            dict: A dictionary where keys are book titles (str) and values are dictionaries containing:
+                - `title` (str): The book's title.
+                - `avg_rating` (float): The average rating of the book.
+                - `reviews` (list of str): A list of user-written reviews for the book.
+        """
+        return self._load_json_file(json_file)
 
     def _load_json_file(self, file_path):
         with open(file_path, 'r') as file:
             data = json.load(file)
         return data
+    
+    def _merge_books_and_reviews(
+        self,
+        books_json: str, 
+        reviews_json:str
+    ) -> dict[str, dict[str, any]]:
+        """
+        Merges book metadata with review data for each title.
+
+        Returns:
+            dict: A combined dictionary where each key is a book title and each value is a dictionary
+                with merged book metadata and review information.
+                Fields include:
+                    - all fields from the book metadata
+                    - 'avg_rating' (float or None)
+                    - 'price' (str or None)
+                    - 'reviews' (list of str)
+        """
+        books = self._load_books(books_json)
+        reviews = self._load_reviews(reviews_json)
+        merged = {}
+
+        for title, book_entries in books.items():
+            review_info = reviews.get(title, {})
+            merged[title] = []
+            for book_info in book_entries: #TODO: Fix this when I get rid of books with same title
+
+                merged[title].append({
+                    **book_info,
+                    AVG_RATING_KEY: review_info.get(AVG_RATING_KEY, None),
+                    PRICE_KEY: review_info.get(PRICE_KEY, None),
+                    REVIEWS_KEY: review_info.get(REVIEWS_KEY, [])
+                })
+
+        return merged
+
 
     def _build_authors_index(self):
         """

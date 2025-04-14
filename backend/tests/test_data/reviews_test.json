@@ -1,0 +1,28 @@
+{
+    "Sample Book One": {
+      "title": "Sample Book One",
+      "avg_rating": 4.5,
+      "price":"NOT AVAILABLE",
+      "reviews": [
+        "A magical experience with a touch of realism.",
+        "Great narrative, but the pacing was off in the middle."
+      ]
+    },
+    "Edge Case Book": {
+      "title": "Edge Case Book",
+      "price":10.98,
+      "avg_rating": 3.0,
+      "reviews": []
+    },
+    "Multi-Author Book": {
+      "title": "Multi-Author Book",
+      "price": 2.45,
+      "avg_rating": 4.0,
+      "reviews": [
+        "Loved how each author brought a unique voice!",
+        "An innovative collaboration, but slightly disjointed.",
+        "Not what I expected, but still engaging."
+      ]
+    }
+  }
+  
