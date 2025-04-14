@@ -96,10 +96,11 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-
-                    container.innerHTML = '<p class="loading"> </p>';
+                    
 
                     if (data.length === 0) {
+
+                        container.innerHTML = '<p class="loading"> </p>';
 
                         const noResultsCard = document.createElement('div');
                         noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card';
@@ -113,6 +114,8 @@
                         container.appendChild(noResultsCard);
                         return;
                     }
+
+                    container.innerHTML = '';
 
                     const bookList = [];
 
