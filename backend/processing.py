@@ -4,8 +4,16 @@ from collections import Counter
 
 from .dataset import Dataset
 from .utils import tokenize_text, tokenize_name_list, tokenize_list
-from .constants import DEFAULT_RECS_WEIGHTS, SCORE_KEY, INPUT_AUTHORS_KEY,\
-    INPUT_CATEGORIES_KEY, INPUT_TITLES_KEY, DEFAULT_RECS_SIZE, NUM_LATENT_SEMANTIC_CONCEPTS
+from .constants import (
+    DEFAULT_RECS_WEIGHTS,
+    SCORE_KEY,
+    INPUT_AUTHORS_KEY,
+    INPUT_CATEGORIES_KEY,
+    INPUT_TITLES_KEY,
+    INPUT_DESCRIPTION_KEY,
+    DEFAULT_RECS_SIZE,
+    NUM_LATENT_SEMANTIC_CONCEPTS, 
+    )
 
 from typing import List, Tuple, Dict
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -446,19 +454,23 @@ class Processor(object):
         titles = user_input[INPUT_TITLES_KEY] 
         authors = user_input[INPUT_AUTHORS_KEY]
         categories = user_input[INPUT_CATEGORIES_KEY]
+        description = user_input[INPUT_DESCRIPTION_KEY]
 
         title = ""
         if titles:
             title = titles[0] # TODO:Update to handle multiple titles
 
-        title_recs = self.get_recs_from_title(title)
-        author_recs = self.get_recs_from_author(authors)
-        categ_recs = self.get_recs_from_categories(categories)
+        if description:
+            top_sorted_recs = self.get_recs_by_description(description, titles, authors, categories)
+        else:
+            title_recs = self.get_recs_from_title(title)
+            author_recs = self.get_recs_from_author(authors)
+            categ_recs = self.get_recs_from_categories(categories)
 
-        aggregated_recs = self._aggregate_recs(title_recs, author_recs, categ_recs, weights)   
-        top_sorted_recs = dict(sorted(aggregated_recs.items(), key=lambda x: x[1], reverse=True)[:output_size])
+            aggregated_recs = self._aggregate_recs(title_recs, author_recs, categ_recs, weights)   
+            top_sorted_recs = dict(sorted(aggregated_recs.items(), key=lambda x: x[1], reverse=True)[:output_size])
+            
         final_recs = self._add_score_field(top_sorted_recs)
-
         return final_recs
 
     def _aggregate_recs(self, title_recs, author_recs, categs_recs, weights):

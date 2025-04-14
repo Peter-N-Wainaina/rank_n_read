@@ -15,6 +15,7 @@ NOT_AVAILABLE = "NOT AVAILABLE"
 INPUT_TITLES_KEY = "titles"
 INPUT_AUTHORS_KEY = "authors"
 INPUT_CATEGORIES_KEY = "categories"
+INPUT_DESCRIPTION_KEY = "description"
 
 DEFAULT_RECS_WEIGHTS = SimpleNamespace(
     TITLES =  0.6, 

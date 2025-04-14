@@ -203,15 +203,16 @@ def test_get_recs_from_title(processor):
     assert len(recommended_books) == 3, f"Expected 3 recommendations, but got {len(recommended_books)}"
     assert "Book1" in recommended_books, "Expected 'Book1' to be in the recommendations"
 
-MOCK_USER_INPUT = {
+MOCK_USER_INPUT_NO_DESCRIPTION = {
         "titles": ["Some Title"],
         "authors": ["Author Name"],
-        "categories": ["Category Name"]
+        "categories": ["Category Name"],
+        "description": ""
     }
 def test_recommendations_with_default_weights(mock_recommendation_sources):
     processor = mock_recommendation_sources
     weights = SimpleNamespace(TITLES=1, AUTHORS=1, CATEGORIES=1)
-    recs = processor.get_recommended_books(MOCK_USER_INPUT, 3, weights=weights)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT_NO_DESCRIPTION, 3, weights=weights)
 
     assert len(recs) == 3
 
@@ -225,7 +226,7 @@ def test_recommendations_with_custom_weights(mock_recommendation_sources):
     processor = mock_recommendation_sources
 
     weights = SimpleNamespace(TITLES=0.3, AUTHORS=0.0, CATEGORIES=0.7)
-    recs = processor.get_recommended_books(MOCK_USER_INPUT, 1, weights)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT_NO_DESCRIPTION, 1, weights)
 
     assert recs[0]["title"] == "Book 5"
     assert len(recs) == 1
@@ -233,7 +234,7 @@ def test_recommendations_with_custom_weights(mock_recommendation_sources):
 def test_recommendations_with_small_output_size(mock_recommendation_sources):
     processor = mock_recommendation_sources
     weights = SimpleNamespace(TITLES=1, AUTHORS=1, CATEGORIES=1)
-    recs = processor.get_recommended_books(MOCK_USER_INPUT, 1, weights)
+    recs = processor.get_recommended_books(MOCK_USER_INPUT_NO_DESCRIPTION, 1, weights)
 
     assert recs[0]["title"] == "Book 5"
 
