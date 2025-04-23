@@ -12,24 +12,50 @@
     flex-direction: column;
 }
 
+body {
+    background-color: #000 !important;
+}
+
+/* body {
+    background-image: url("../static/images/bg.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+} */
+
 #container_home{
-    background-color: rgb(208, 218, 219);
-    padding: 20px;
+    /* background-color: rgb(208, 218, 219); */
+    padding: 0px;
     margin-bottom: 20px;
-  }
+}
+
+.home-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 20px;
+}
   
+.title-image {
+    max-width: 100%;
+    height: 40vh;
+}
+    
 #input_form{
     border-radius: 30px; /* Rounded corners */
     padding: 30px; /* Add spacing */
-    box-shadow: 2px 2px 10px rgba(0, 51, 255, 0.5);
+    box-shadow: 2px 2px 10px rgba(254,173,51,0.3);
     width: 60VW;
+    background-color: rgb(15, 15, 15);
+    color: rgba(254,173,51,0.7);
 }
 
 
 #input_form:hover{
     transform: rotate(1deg); 
     transform: scale(1.02);
-    box-shadow: 4px 4px 10px rgba(0, 51, 255, 0.6);
+    box-shadow: 4px 4px 10px rgba(254,173,51,0.7);
 }
 
 #form{
@@ -39,7 +65,35 @@
     width: 50VW;
 }
 
+.form-control {
+    background-color: rgb(15, 15, 15) !important;
+    color: rgba(254,173,51,0.7) !important;
+}
+
+.form-control::placeholder {
+    color: gray!important; 
+}
+
 #rec-button:hover {
+    transform: scale(1.05);
+}
+
+#button-advanced {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50VW;
+    padding: 15px;
+}
+
+.btn.btn-primary{
+    border-radius: 999px !important;
+    color: #eeede880 !important;
+    background-color: rgba(254,173,51,0.3) !important;
+    border: none !important;
+}
+
+#show-advanced:hover {
     transform: scale(1.05);
 }
 
@@ -49,11 +103,12 @@
     left: 0;
     height: 40px;
     width: 100%;
-    background-color: rgb(208, 218, 219);
+    background-color: rgba(20, 20, 20, 0.4);
     color: #101011;
     font-size: 18px;
     text-align: center;
     padding-top: 15px;
+    color: rgba(254,173,51,0.7) !important;
 }
 
 #books-container {
@@ -70,18 +125,26 @@
     width: 100%;
     max-width: 400px;
     cursor: pointer;
-    border: 1px solid #ccc;
+    border: 1px transparent rgba(254,173,51,0.5);
     border-radius: 10px;
     padding: 10px;
-    box-shadow: 1px 1px 10px rgba(0, 51, 255, 0.3);
-    background-color: #fff;
+    box-shadow: 1px 1px 10px rgba(254,173,51,0.4);
+    background-color: rgb(15, 15, 15);
     transition: transform 0.3s;
+    color: #fff;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s ease-out;
 }
 
+.book-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 .book-card:hover {
     transform: scale(1.02);
-    box-shadow: 2px 2px 10px rgba(0, 51, 255, 0.6);
+    box-shadow: 2px 2px 10px rgba(254,173,51,0.7);
 }
 
 .book-info {
@@ -92,7 +155,7 @@
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 5px;
-    color: rgba(0, 51, 255, 0.6);
+    color: rgba(254,173,51,0.7);
 }
   
 .book-meta {
@@ -124,7 +187,7 @@
 }
 
 h2 {
-    color: rgba(0, 51, 255, 0.6) !important;
+    color: rgba(254,173,51,0.7) !important;
 }
 
 .loading {
@@ -139,7 +202,7 @@ h2 {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.9);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -147,17 +210,18 @@ h2 {
 }
 
 .modal-content {
-    background-color: #fff !important;
+    background-color: rgb(15, 15, 15) !important;
     opacity: 1 !important;
     backdrop-filter: none;
     padding: 30px;
-    border-radius: 15px;
-    max-width: 600px;
+    border-radius: 10%;
+    max-width: 800px;
     width: 90%;
     max-height: 90%;
     overflow-y: auto;
     position: relative;
     box-shadow: 0px 4px 20px rgba(0,0,0,0.3);
+    color: rgba(255, 250, 240, 0.7) !important;
 }
 
 .modal-close {
@@ -168,7 +232,7 @@ h2 {
     border: none;
     font-size: 1.5em;
     cursor: pointer;
-    color: #333;
+    color: floralwhite;
 }
 
 
@@ -206,5 +270,29 @@ h2 {
     50% {
       transform: translateY(-6px);
     }
+  }
+
+
+@media (max-width: 800px) {
+    #books-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* optional: center cards in the column */
+    }
+
+    .book-card {
+        max-width: 700px;
+        width: 80%;
+    }
+
+    .preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .preview .book-title {
+        text-align: center;
+    }
+
 }
-  

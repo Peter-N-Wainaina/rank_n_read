@@ -18,38 +18,57 @@
 <body>
     <div class="full-body-container">
         <div class="container-fluid" id="container_home">
-            <div class="home">
+            <div class="home-title">
+                <img src="{{ url_for('static', filename='images/ranknread.png') }}" alt="Rank N Read" class="title-image">
+            </div>
+            <!-- <div class="home">
               <h1 style="color: rgb(21, 19, 19); text-align: center; padding-top: 30px">
                 RANK_N_READ
               </h1>
-            </div>
+            </div> -->
         </div>
         <div class="container" id="input_form">
             <div class="container-sm" id="form">
-                <div class="mb-3">
-                    <label for="bookTitle" class="form-label">Book Title</label>
-                    <input type="text" class="form-control" id="bookTitle" list="title-suggestions" placeholder="Enter a title">
-                    <datalist id="title-suggestions"></datalist>
+                  <div id="quick-search">
+                    <div class="mb-3">
+                        <label for="floatingTextarea" class="form-label">What kind of book are you looking for?</label>
+                        <textarea class="form-control" placeholder="e.g. a history book that has romance" id="freeText"></textarea>
+                    </div>
                   </div>
-                  <div class="mb-3">
-                    <label for="author" class="form-label">Author</label>
-                    <input type="text" class="form-control" id="author" list="author-suggestions" placeholder="Enter an author">
-                    <datalist id="author-suggestions"></datalist>
+                  <div id="advanced-form" style="display: none;">
+                    <div class="mb-3">
+                        <label for="bookTitle" class="form-label">Book Title</label>
+                        <input type="text" class="form-control" id="bookTitle" list="title-suggestions" placeholder="Enter a title">
+                        <datalist id="title-suggestions"></datalist>
+                      </div>
+                      <div class="mb-3">
+                        <label for="author" class="form-label">Author</label>
+                        <input type="text" class="form-control" id="author" list="author-suggestions" placeholder="Enter an author">
+                        <datalist id="author-suggestions"></datalist>
+                      </div>
+                      <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <input type="text" class="form-control" id="category" list="category-suggestions" placeholder="Enter comma-separated categories">
+                        <datalist id="category-suggestions"></datalist>
+                      </div>
+                      <p class="text-muted small text-center mt-2">
+                        Fill in atleast one input field to get recommandations.
+                      </p>
+                      <div class="d-grid gap-2 col-6 mx-auto" id="rec-button">
+                        <button class="btn btn-primary" type="button">Find Recommendations</button>
+                      </div>
                   </div>
-                  <div class="mb-3">
-                    <label for="category" class="form-label">Category</label>
-                    <input type="text" class="form-control" id="category" list="category-suggestions" placeholder="Enter comma-separated categories">
-                    <datalist id="category-suggestions"></datalist>
-                  </div>
-                  <div class="mb-3">
-                    <label for="floatingTextarea" class="form-label">Description</label>
-                    <textarea class="form-control" placeholder="Enter description" id="freeText"></textarea>
-                  </div>
-                  <div class="d-grid gap-2 col-6 mx-auto" id="rec-button">
-                    <button class="btn btn-primary" type="button">Find Recommendations</button>
-                  </div>
+
+                  
+                  
             </div>
         </div>
+
+        <div id="button-advanced">
+            <div class="d-grid gap-2 col-6 mx-auto" id="show-advanced">
+              <button class="btn btn-primary" type="button">Advanced Search</button>
+            </div>
+        </div> 
 
         <div id="books-container"></div>
 
@@ -66,49 +85,70 @@
     </div>
     
     <script>
+        document.getElementById("show-advanced").addEventListener("click", () => {
+            // document.getElementById("quick-search").style.display = "none";
+            document.getElementById("button-advanced").style.display = "none";
+            document.getElementById("advanced-form").style.display = "block";
+        });
+
+        document.getElementById("freeText").addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const description = this.value.trim();
+                if (description) {
+                searchBooks({
+                    titles: [],
+                    authors: [],
+                    categories: [],
+                    description: description
+                });
+                }
+            }
+        });
+
         document.getElementById("rec-button").addEventListener("click", function() {
-        // Get input values and process them
             const titleRaw = document.getElementById("bookTitle").value;
             const authorRaw = document.getElementById("author").value;
             const categoryRaw = document.getElementById("category").value;
-            const description = document.getElementById("freeText")
+            const description = document.getElementById("freeText").value;
 
             const titles = titleRaw.split(",").map(item => item.trim()).filter(item => item !== "");
             const authors = authorRaw.split(",").map(item => item.trim()).filter(item => item !== "");
             const categories = categoryRaw.split(",").map(item => item.trim()).filter(item => item !== "");
 
-            // Display loading message
+            searchBooks({
+                titles: titles,
+                authors: authors,
+                categories: categories,
+                description: description
+            });
+        });
+
+        function searchBooks(payload) {
             const container = document.getElementById('books-container');
             container.innerHTML = '<p class="loading">Loading...</p>';
 
             setTimeout(() => {
                 fetch('/getbooks', {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        titles: titles,
-                        authors: authors,
-                        categories: categories,
-                        description: description
-                    }),
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
                 })
                 .then(response => response.json())
                 .then(data => {
-
+                    console.log(data)
                     if (data.length === 0) {
-                        container.innerHTML = '';
+                        container.innerHTML = '<p class="loading"> </p>';
 
                         const noResultsCard = document.createElement('div');
                         noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card mx-auto';
-
                         noResultsCard.innerHTML = `
-                            <div class="emoji" style="font-size: 50px; margin-bottom: 15px;">😕📚</div>
-                            <h5>No books found</h5>
-                            <p>Try a different query.</p>
+                        <div class="emoji" style="font-size: 50px; margin-bottom: 15px;">😕📚</div>
+                        <h5>No books found</h5>
+                        <p>Try a different query.</p>
                         `;
-
                         container.appendChild(noResultsCard);
                         return;
                     }
@@ -122,6 +162,7 @@
 
                         const card = document.createElement('div');
                         card.className = 'book-card';
+                        observer.observe(card); 
 
                         const image = document.createElement('img');
                         image.className = 'book-image';
@@ -131,6 +172,7 @@
                         image.alt = book.title;
 
                         const preview = document.createElement('div');
+                        preview.className = 'preview';
                         preview.appendChild(image);
 
                         const title = document.createElement('div');
@@ -155,8 +197,8 @@
                     console.error('Error fetching books:', error);
                     container.innerHTML = '<p class="error">Error loading books. Please try again.</p>';
                 });
-            }, 1000); 
-        });
+            }, 1000);
+        }
 
 
         function showModal(book) {
@@ -194,6 +236,14 @@
             score.innerHTML = `<strong>Similarity Score:</strong> ${book.score?.toFixed(2) ?? 'N/A'}`;
             modalContent.appendChild(score);
 
+            const link = document.createElement('p');
+            if (book.previewLink) {
+                link.innerHTML = `<strong>Preview Link:</strong> <a href="${book.previewLink}" target="_blank" rel="noopener noreferrer">click here</a>`;
+            } else {
+                link.innerHTML = `<strong>Preview Link:</strong> N/A`;
+            }
+            modalContent.appendChild(link);
+
             const description = document.createElement('p');
             description.innerHTML = `<strong>Description:</strong> ${book.description ?? 'No description available.'}`;
             modalContent.appendChild(description);
@@ -230,6 +280,34 @@
                 modal.style.display = "none";
             }
         }
+
+        const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target); // remove if you only want it once
+            }
+        });
+        }, {
+        threshold: 0.1 // triggers when 10% of the card is visible
+        });
+    
+        // Wait for the books to be loaded dynamically
+        const observeNewCards = () => {
+        const cards = document.querySelectorAll('.book-card');
+        cards.forEach(card => observer.observe(card));
+        };
+    
+        // Hook into your book-loading logic
+        const origAppendChild = container.appendChild;
+        container.appendChild = function (child) {
+        const result = origAppendChild.call(this, child);
+        if (child.classList && child.classList.contains('book-card')) {
+            observer.observe(child);
+        }
+        return result;
+        };
+
 
 
         function debounce(func, delay) {
@@ -303,6 +381,9 @@
                 })
                 .catch(err => console.error("Error fetching category suggestions:", err));
             },50)); // wait 50ms after last keystroke
+
     </script>
+
+  
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
