@@ -139,10 +139,13 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log(data)
+
                     if (data.length === 0) {
                         container.innerHTML = '<p class="loading"> </p>';
 
                         const noResultsCard = document.createElement('div');
+                        noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card mx-auto';
+
                         noResultsCard.className = 'book-card no-results-card text-center p-4 glow-card mx-auto';
                         noResultsCard.innerHTML = `
                         <div class="emoji" style="font-size: 50px; margin-bottom: 15px;">😕📚</div>
