@@ -284,28 +284,9 @@ def test_remove_common_words_all_tokens_removed():
     assert result == ""
 
 def test_create_tfidf_matrix():
-    processor = Processor()
-
-    books = {
-        "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)": [
-            {
-                "title": "Intelligent Biometric Techniques in Fingerprint and Face Recognition (International Series on Computational Intelligence)",
-                "description": "The tremendous world-wide interest in intelligent biometric techniques in fingerprint and face recognition is fueled by the myriad of potential applications, including banking and security systems...",
-                "authors": ["Shigeyoshi Tsutsui"],
-                "categories": ["Technology & Engineering"]
-            }
-        ],
-        "The Art of Fly Tying (The Hunting & Fishing Library)": [
-            {
-                "title": "The Art of Fly Tying (The Hunting & Fishing Library)",
-                "description": "-- Shows the tools you need to tie any popular fly pattern. -- Includes all the basic elements of popular fly patterns -- Features over 200 classic and new patterns.",
-                "authors": ["John Van Vliet"],
-                "categories": ["Sports & Recreation"]
-            }
-        ]
-    }
-
-    titles, tfidf_matrix, vectorizer = processor.create_tfidf_matrix(books)
+    processor = Processor(PROCESSOR_TEST_JSON)
+    titles, tfidf_matrix, vectorizer = processor.create_tfidf_matrix()
+    books = processor.books
 
     # Assertions
     assert isinstance(titles, list), "Titles should be a list"

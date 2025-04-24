@@ -1,4 +1,5 @@
 import math
+from types import SimpleNamespace
 import numpy as np
 from collections import Counter
 
@@ -30,7 +31,7 @@ class Processor(object):
         self.dataset = dataset
         self.books = self.dataset.books
         self.title_vocab = self.dataset.title_vocab_frequency
-        self.book_titles, self.tfidf_matrix, self.vectorizer = self.create_tfidf_matrix(self.books)
+        self.book_titles, self.tfidf_matrix, self.vectorizer = self.create_tfidf_matrix()
         self.book_vecs, self.svd_model = self.reduce_with_svd(self.tfidf_matrix)
     
     def compute_jaccard_similarity(self, query_categories, book_categories):
@@ -303,7 +304,7 @@ class Processor(object):
         
         return result_books
     
-    def create_tfidf_matrix(self, books: dict) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
+    def create_tfidf_matrix(self) -> Tuple[List[str], csr_matrix, TfidfVectorizer]:
         """
         Generate a TF-IDF matrix from a dictionary of books
         
@@ -317,23 +318,11 @@ class Processor(object):
                 - A sparse matrix of TF-IDF features (rows = books, columns = terms).
                 - The trained TfidfVectorizer, which can be reused for transforming queries later.
         """
-        titles: List[str] = []
-        texts: List[str] = []
 
-        for title, entries in books.items():
-            if not entries:
-                continue  
+        titles = list(self.dataset.book_data_dict.keys())
+        texts = list(self.dataset.book_data_dict.values())
 
-            book = entries[0]  
-            desc = book.get("description", "")
-            authors = " ".join(book.get("authors", []))
-            categories = " ".join(book.get("categories", []))
-            full_text = f"{title} {desc} {authors} {categories}".strip()
-
-            titles.append(title)
-            texts.append(full_text)
-
-        vectorizer = TfidfVectorizer(stop_words="english", max_features=100_000)
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=100000)
         tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts)
 
         return titles, tfidf_matrix, vectorizer
@@ -470,7 +459,7 @@ class Processor(object):
         return final_recs
 
     def _aggregate_recs(self, title_recs, author_recs, categs_recs, weights):
-
+        weights = self._balance_weights(title_recs, author_recs, categs_recs, weights)
         title_recs = self._apply_weight(title_recs, weights.TITLES)
         author_recs = self._apply_weight(author_recs, weights.AUTHORS)
         categs_recs = self._apply_weight(categs_recs, weights.CATEGORIES)
@@ -483,7 +472,26 @@ class Processor(object):
             c_score = categs_recs.get(key, 0)
             final_recs[key] = a_score + t_score + c_score 
         return final_recs
-    
+
+    def _balance_weights(self, title_recs, author_recs, categs_recs, weights):
+        t_weight = weights.TITLES
+        a_weight = weights.AUTHORS
+        c_weights = weights.CATEGORIES
+        total_weight = 0
+
+        if title_recs:
+            total_weight += t_weight
+        if author_recs:
+            total_weight += a_weight
+        if categs_recs:
+            total_weight += c_weights
+
+        return  SimpleNamespace(
+            TITLES = t_weight / total_weight, 
+            AUTHORS = a_weight / total_weight, 
+            CATEGORIES = c_weights / total_weight
+        )
+            
     def _apply_weight(self, recs, weight):
         for key, score in recs.items():
             updated_score = score * weight

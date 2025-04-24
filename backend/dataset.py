@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-from .config import DEFAULT_BOOKS_JSON_FILE, DEFAULT_REVIEWS_JSON_FILE
+from .config import POPULAR_BOOKS_JSON_FILE, DEFAULT_REVIEWS_JSON_FILE, SAMPLED_BOOKS_JSON_FILE
 from .utils import tokenize_text, tokenize_name
 from .constants import (
     AVG_RATING_KEY,
@@ -12,10 +12,15 @@ from .constants import (
     CATEGORY_KEY,
 )
 
-class Dataset(object):
-    def __init__(self, books_json=DEFAULT_BOOKS_JSON_FILE, reviews_json=DEFAULT_REVIEWS_JSON_FILE):
-        self.books = self._merge_books_and_reviews(books_json, reviews_json)
 
+class Dataset(object):
+    def __init__(self, books_json=POPULAR_BOOKS_JSON_FILE, reviews_json=DEFAULT_REVIEWS_JSON_FILE):
+        if books_json == POPULAR_BOOKS_JSON_FILE:
+            books_jsons = list(set([POPULAR_BOOKS_JSON_FILE, SAMPLED_BOOKS_JSON_FILE, books_json]))
+        else:
+            books_jsons = [books_json]
+
+        self.books = self._merge_books_and_reviews(books_jsons, reviews_json)
         self._book_title_to_id, self._book_id_to_title = self._build_book_index()
         self.authors_index = self._build_authors_index()
         self.categories_index = self._build_categories_index()
@@ -137,9 +142,15 @@ class Dataset(object):
             data = json.load(file)
         return data
     
+    def _merge_books(self, books_jsons: list[str]):
+        books = {}
+        for json in books_jsons:
+            books |= self._load_books(json)
+        return books
+
     def _merge_books_and_reviews(
         self,
-        books_json: str, 
+        books_jsons: list[str], 
         reviews_json:str
     ) -> dict[str, dict[str, any]]:
         """
@@ -154,10 +165,9 @@ class Dataset(object):
                     - 'price' (str or None)
                     - 'reviews' (list of str)
         """
-        books = self._load_books(books_json)
+        books = self._merge_books(books_jsons)
         reviews = self._load_reviews(reviews_json)
         merged = {}
-
         for title, book_entries in books.items():
             review_info = reviews.get(title, {})
             merged[title] = []
@@ -326,7 +336,7 @@ class Dataset(object):
 
         Returns:
             dict: A dictionary where the key is the book title (str) and the value is a 
-                concatenated lowercase string of relevant book data (e.g. title + author + description + categories)
+                concatenated lowercase string of relevant book data (e.g. title + author + description + categories + reviews)
 
         """
         book_data_dict = defaultdict(str)
@@ -336,7 +346,8 @@ class Dataset(object):
                 description = book.get(DESCRIPTION_KEY, "")
                 authors = " ".join(book.get(AUTHOR_KEY, []))
                 categories = " ".join(book.get(CATEGORY_KEY, []))
-                combined = f"{title} {description} {authors} {categories}"
+                reviews = " ".join(book.get(REVIEWS_KEY, []))
+                combined = f"{title} {description} {authors} {categories} {reviews}"
                 data_parts.append(combined.lower())
 
             book_data_dict[title] = " ".join(data_parts)  

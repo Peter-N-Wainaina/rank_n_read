@@ -22,3 +22,5 @@ helpers/*
 json_template/
 
 .history
+
+backend/data_exploration
