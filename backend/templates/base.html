@@ -124,9 +124,11 @@
             });
         });
 
+        const container = document.getElementById('books-container');
+
         function searchBooks(payload) {
-            const container = document.getElementById('books-container');
-            container.innerHTML = '<p class="loading">Loading...</p>';
+            // const container = document.getElementById('books-container');
+             container.innerHTML = '<p class="loading">Loading...</p>';
 
             setTimeout(() => {
                 fetch('/getbooks', {
@@ -138,7 +140,6 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data)
 
                     if (data.length === 0) {
                         container.innerHTML = '<p class="loading"> </p>';
