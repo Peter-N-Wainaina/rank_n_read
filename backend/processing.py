@@ -322,7 +322,7 @@ class Processor(object):
         titles = list(self.dataset.book_data_dict.keys())
         texts = list(self.dataset.book_data_dict.values())
 
-        vectorizer = TfidfVectorizer(stop_words="english", max_features=100000)
+        vectorizer = TfidfVectorizer(stop_words="english", max_df=0.9, max_features=100000)
         tfidf_matrix: csr_matrix = vectorizer.fit_transform(texts)
 
         return titles, tfidf_matrix, vectorizer
@@ -395,7 +395,61 @@ class Processor(object):
         sorted_indices = np.argsort(flattened_cos_sim_scores)[::-1]
         top_k_indices = sorted_indices[:k]
         top_matches = {book_titles[i]: flattened_cos_sim_scores[i] for i in top_k_indices}
-        return top_matches
+        return top_matches, top_k_indices
+
+    def get_concept_contributions_for_books(self, top_k_indices: List[int], n_words: int = 5) -> Dict[str, List[Dict]]:
+        """
+        For each recommended book, returns a list of contributing concepts sorted by weight.
+        Each concept includes its weight and top contributing words.
+
+        Args:
+            top_k_indices (List[int]):
+                The indices of the top-k recommended books.
+            n_words (int):
+                Number of top words to return per concept.
+
+        Returns:
+            Dict[str, List[Dict]]:
+                For each book, a list of dicts sorted by concept weight.
+                Each dict includes the concept index, weight, and top keywords.
+        """
+        terms = self.vectorizer.get_feature_names_out()
+        components = self.svd_model.components_
+
+        concept_labels = self.get_concept_labels()
+        results = {}
+        for i in top_k_indices:
+            weights = self.book_vecs[i]
+            concept_ranks = weights.argsort()[::-1][:3]  # descending by contribution
+
+            concept_info = []
+            for c in concept_ranks:
+                keywords = [terms[j] for j in components[c].argsort()[::-1][:n_words]]
+                concept_info.append({
+                    "concept": concept_labels.get(c, f"Concept {c}"),
+                    "weight": float(round(weights[c], 4)),
+                    "keywords": keywords
+                })
+
+            results[self.book_titles[i]] = concept_info
+
+        return results
+
+
+    def get_concept_labels(self, n_words: int = 3) -> Dict[int, str]:
+        """
+        Generate a name/label for each latent concept using its top N keywords.
+        """
+        terms = self.vectorizer.get_feature_names_out()
+        components = self.svd_model.components_
+
+        concept_labels = {}
+        for i, comp in enumerate(components):
+            top_word_indices = comp.argsort()[::-1][:n_words]
+            label = " & ".join(terms[j] for j in top_word_indices)
+            concept_labels[i] = label
+
+        return concept_labels
 
 
     def get_recs_by_description(self, description: str, title: str, authors: List[str], categories: List[str]) -> Dict[str, float]:
@@ -427,9 +481,18 @@ class Processor(object):
         composite_query = " ".join(composite_query.split())
 
         query_vec = self.transform_query(composite_query, self.vectorizer, self.svd_model)
-        top_matches = self.get_top_k_similar_books(query_vec, self.book_vecs, self.book_titles)
-        return top_matches
+        top_matches, top_k_indices = self.get_top_k_similar_books(query_vec, self.book_vecs, self.book_titles)
 
+        concept_map = self.get_concept_contributions_for_books(top_k_indices)
+
+        results = {
+            title: {
+                "score": top_matches[title],
+                "concepts": concept_map[title]
+            }
+            for title in top_matches
+        }
+        return results
     
     def get_recommended_books(self, user_input, output_size=DEFAULT_RECS_SIZE,\
                                weights=DEFAULT_RECS_WEIGHTS) -> list[dict]:

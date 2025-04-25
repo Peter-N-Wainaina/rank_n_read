@@ -323,28 +323,64 @@ def test_transform_query():
 @pytest.fixture
 def mock_svd_setup() -> Processor:
     with patch.object(Processor, 'create_tfidf_matrix') as mock_create_tfidf, \
-         patch.object(Processor, 'reduce_with_svd') as mock_reduce_svd:
-        
-        # Define mock returns
-        mock_create_tfidf.return_value = (
-            ["Book A", "Book B", "Book C"],
-            csr_matrix(np.array([[0.1, 0.2], [0.2, 0.1], [0.3, 0.4]])),
-            MagicMock()  # vectorizer
+         patch.object(Processor, 'reduce_with_svd') as mock_reduce_svd, \
+         patch.object(Processor, 'transform_query') as mock_transform_query, \
+         patch.object(Processor, 'get_top_k_similar_books') as mock_get_top_k, \
+         patch.object(Processor, 'get_concept_labels') as mock_get_concept_labels:
+
+        # Mock titles, TF-IDF matrix, vectorizer
+        mock_titles = ["Book A", "Book B", "Book C"]
+        mock_tfidf = csr_matrix(np.array([
+            [0.1, 0.2],
+            [0.2, 0.1],
+            [0.3, 0.4]
+        ]))
+        mock_vectorizer = MagicMock()
+        mock_vectorizer.get_feature_names_out.return_value = np.array(["robot", "design"])
+
+        mock_create_tfidf.return_value = (mock_titles, mock_tfidf, mock_vectorizer)
+
+        # Mock reduced SVD matrix + mock SVD object with components_
+        mock_reduced = np.array([
+            [0.2, 0.8],
+            [0.1, 0.9],
+            [0.5, 0.5]
+        ])
+        mock_svd = MagicMock()
+        mock_svd.components_ = np.array([
+            [0.9, 0.1], 
+            [0.3, 0.7]   
+        ])
+        mock_reduce_svd.return_value = (mock_reduced, mock_svd)
+
+        mock_transform_query.return_value = np.array([[0.15, 0.85]])
+
+        mock_get_top_k.return_value = (
+            {"Book B": 0.91, "Book A": 0.83},
+            [1, 0]
         )
 
-        mock_reduce_svd.return_value = (
-            np.array([[0.2, 0.8], [0.1, 0.9], [0.5, 0.5]]),
-            MagicMock()  # SVD model
-        )
+        mock_get_concept_labels.return_value = {
+            0: "robot & design",
+            1: "design & robot"
+        }
 
-        # Now instantiation uses mocks
         processor = Processor()
+        processor.book_titles = mock_titles
+        processor.vectorizer = mock_vectorizer
+        processor.svd_model = mock_svd
+        processor.book_vecs = mock_reduced
 
-        # Patch remaining methods directly on instance
-        processor.transform_query = MagicMock(return_value=np.array([[0.15, 0.85]]))
-        processor.get_top_k_similar_books = MagicMock(return_value={
-            "Book B": 0.91,
-            "Book A": 0.83
+        # Patch the final concept breakdown method directly
+        processor.get_concept_contributions_for_books = MagicMock(return_value={
+            "Book A": [
+                {"concept": "robot & design", "weight": 0.8, "keywords": ["robot", "design"]},
+                {"concept": "design & robot", "weight": 0.2, "keywords": ["design", "robot"]}
+            ],
+            "Book B": [
+                {"concept": "design & robot", "weight": 0.9, "keywords": ["design", "robot"]},
+                {"concept": "robot & design", "weight": 0.1, "keywords": ["robot", "design"]}
+            ]
         })
 
         return processor
