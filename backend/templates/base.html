@@ -291,10 +291,31 @@
             publishDate.innerHTML = `<strong>Published Date:</strong> ${book.publishDate ?? 'Unknown'}`;
             modalContent.appendChild(publishDate);
 
-            const score = document.createElement('p');
-            const scoreValue = typeof book.score === 'object' ? book.score.score : book.score;
-            score.innerHTML = `<strong>Similarity Score:</strong> ${scoreValue?.toFixed(2) ?? 'N/A'}`;
-            modalContent.appendChild(score);
+            // const score = document.createElement('p');
+            // const scoreValue = typeof book.score === 'object' ? book.score.score : book.score;
+            // score.innerHTML = `<strong>Similarity Score:</strong> ${scoreValue?.toFixed(2) ?? 'N/A'}`;
+            // modalContent.appendChild(score);
+
+            if (book.score && book.score.concepts) {
+                const keywordsHeader = document.createElement('h5');
+                keywordsHeader.textContent = "Matched Keywords:";
+                modalContent.appendChild(keywordsHeader);
+
+                const keywordsPara = document.createElement('p');
+                const allKeywords = [];
+
+                book.score.concepts.forEach(concept => {
+                    allKeywords.push(...concept.keywords.slice(0, 5)); 
+                });
+
+                // Remove duplicates
+                const uniqueKeywords = [...new Set(allKeywords)];
+
+                keywordsPara.textContent = uniqueKeywords.join(", ");
+                keywordsPara.style.fontSize = "0.95em";
+                modalContent.appendChild(keywordsPara);
+            }
+
 
             const link = document.createElement('p');
             if (book.previewLink) {
