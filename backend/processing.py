@@ -548,6 +548,8 @@ class Processor(object):
             total_weight += a_weight
         if categs_recs:
             total_weight += c_weights
+        if total_weight == 0:
+            return weights
 
         return  SimpleNamespace(
             TITLES = t_weight / total_weight, 
