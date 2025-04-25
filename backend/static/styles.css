@@ -84,8 +84,44 @@ body {
     border: none !important;
 }
 
+#open-help {
+    width: 50px; 
+    height: 50px;
+    border-radius: 50%;  
+    background-color: rgba(254, 173, 51, 0.3);
+    color: rgba(254, 173, 51, 0.75);
+    border: 2px solid rgba(254, 173, 51, 0.5);
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 2px 2px 10px rgba(254, 173, 51, 0.5);
+}
+
+#open-help:hover {
+    background-color: rgba(254, 173, 51, 0.5);
+    transform: scale(1.1);
+}
+
+#help-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+}
+
 #show-advanced:hover {
     transform: scale(1.05);
+}
+
+.btn.btn-secondary {
+    border-radius: 999px;
+    background-color: rgba(254, 173, 51, 0.2);
+    color: rgba(254, 173, 51, 0.8);
+    border: 1px solid rgba(254, 173, 51, 0.4);
+    margin: 10px;
 }
 
 .footer {
@@ -94,7 +130,7 @@ body {
     left: 0;
     height: 40px;
     width: 100%;
-    background-color: rgba(20, 20, 20, 0.4);
+    background-color: rgba(20, 20, 20, 1);
     color: #101011;
     font-size: 18px;
     text-align: center;
@@ -183,7 +219,7 @@ h2 {
 
 .loading {
     font-size: 2em;
-    
+    color: grey;
 }
 
 /* Modal Styles */
@@ -205,7 +241,8 @@ h2 {
     opacity: 1 !important;
     backdrop-filter: none;
     padding: 30px;
-    border-radius: 10%;
+    border-radius: 2% !important;
+    border: 1px solid rgba(254,173,51,0.5) !important;
     max-width: 800px;
     width: 90%;
     max-height: 90%;
